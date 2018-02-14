@@ -83,13 +83,22 @@ readIPLogger() {
 			echo ${MAC},${IP},${IN},${OUT} > /tmp/wrt-link/${sample_time}.bw.db
 		fi
 	done
+
+	#Free some memory
+	rm -f /tmp/*_$$.tmp
 }
 
 sendFiles() {
 	for FILE in $(ls /tmp/wrt-link/)
 	do
 		echo "DEBUG: scp -i /tmp/wrt-link.id_rsa -P ${3} ${FILE} ${1}@${2}:${FILE}"
-		scp -i /tmp/wrt-link.id_rsa -P ${3} ${FILE} ${1}@${2}:${FILE}
+		scp -i /tmp/wrt-link.id_rsa -P ${3} /tmp/wrt-link/${FILE} ${1}@${2}:${FILE}
+		if [ $? -eq 0 ]; then
+		  echo "DEGUB: scp success removing file"
+			rm /tmp/wrt-link/${FILE}
+		else
+		  echo "ERROR: scp failed!"
+		fi
 	done
 }
 
