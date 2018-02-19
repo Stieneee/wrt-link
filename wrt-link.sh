@@ -78,9 +78,7 @@ readIPLogger() {
 		OUT=$(cat /tmp/out_$$.tmp)
 
 		if [ ${IN} -gt 0 -o ${OUT} -gt 0 ];  then
-			grep -v "${MAC}" /tmp/wrt-link/${sample_time}.bw.db > /tmp/db_$$.tmp
-
-			echo ${MAC},${IP},${IN},${OUT} > /tmp/wrt-link/${sample_time}.bw.db
+			echo ${MAC},${IP},${IN},${OUT} >> /tmp/wrt-link/${sample_time}.bw.db
 		fi
 	done
 
