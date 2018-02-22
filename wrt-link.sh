@@ -63,6 +63,8 @@ readIPLogger() {
 	#Read and reset counters
 	iptables -L WRTLINK -vnxZ -t filter > /tmp/traffic_$$.tmp
 
+	cat /tmp/traffic_$$.tmp
+
 	grep -v "0x0" /proc/net/arp  | while read IP TYPE FLAGS MAC MASK IFACE
 	do
 		#Add new data to the graph. Count in Kbs to deal with 16 bits signed values (up to 2G only)
@@ -71,8 +73,8 @@ readIPLogger() {
 		echo 0 > /tmp/out_$$.tmp
 		grep ${IP} /tmp/traffic_$$.tmp | while read PKTS BYTES TARGET PROT OPT IFIN IFOUT SRC DST
 		do
-			[ "${DST}" = "${IP}" ] && echo $((${BYTES}/1000)) > /tmp/in_$$.tmp
-			[ "${SRC}" = "${IP}" ] && echo $((${BYTES}/1000)) > /tmp/out_$$.tmp
+			[ "${DST}" = "${IP}" ] && echo $((${BYTES})) > /tmp/in_$$.tmp
+			[ "${SRC}" = "${IP}" ] && echo $((${BYTES})) > /tmp/out_$$.tmp
 		done
 		IN=$(cat /tmp/in_$$.tmp)
 		OUT=$(cat /tmp/out_$$.tmp)
