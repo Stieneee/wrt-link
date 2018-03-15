@@ -20,6 +20,11 @@
 
 LAN_IFACE=$(nvram get lan_ifname)
 
+
+echo "0" > /proc/sys/net/bridge/bridge-nf-call-iptables
+echo "0" > /proc/sys/net/bridge/bridge-nf-call-ip6tables
+echo "1" > /proc/sys/net/netfilter/nf_conntrack_acct
+
 setupIPLogger() {
 	#Create the WRTLINK CHAIN (it doesn't matter if it already exists).
 	iptables -N WRTLINK 2> /dev/null
@@ -49,6 +54,10 @@ setupIPLogger() {
 	echo "DEBUG: IP Logger Setup"
 }
 
+# uptime() {
+#
+# }
+
 # pingTest() {
 #
 # }
@@ -61,7 +70,7 @@ readIPLogger() {
 	sample_time=$(date "+%s")
 	echo "Reading IP Logger ${sample_time}"
 	#Read and reset counters
-	iptables -L WRTLINK -vnxZ -t filter > /tmp/traffic_$$.tmp
+	iptables -L WRTLINK -vnxZ > /tmp/traffic_$$.tmp
 
 	cat /tmp/traffic_$$.tmp
 
@@ -130,6 +139,7 @@ else
 		#pingTest
 		#speedTest
 		readIPLogger
+		setupIPLogger
 		sendFiles "${1}" "${2}" "${3}"
 		echo "DEBUG: sleep"
 		sleep 60
