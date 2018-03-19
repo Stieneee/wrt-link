@@ -88,7 +88,7 @@ readConntrack() {
 	sed -e 's/\[UNREPLIED\]//' /proc/net/ip_conntrack | awk '
 	/tcp/ { printf "%s %s %s %s %s %s %s \n", $1, $5, $6, $7, $8, $10, $16 }
 	/udp/ { printf "%s %s %s %s %s %s %s \n", $1, $4, $5, $6, $7, $9, $15 }
-	' | sed -e 's/src=//' -e 's/dst=//' -e 's/sport=//' -e 's/dport=//' -e 's/bytes=//g' > /tmp/wrt-link/${1}.bw.db
+	' | sed -e 's/src=//' -e 's/dst=//' -e 's/sport=//' -e 's/dport=//' -e 's/bytes=//g' >> /tmp/wrt-link/${1}.bw.db
 
 	sh /proc/net/ip_conntrack_flush
 }
@@ -104,6 +104,7 @@ sendFiles() {
 			rm /tmp/wrt-link/${FILE}
 		else
 		  echo "ERROR: scp failed!"
+			break
 		fi
 	done
 }
