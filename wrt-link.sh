@@ -20,7 +20,6 @@
 
 LAN_IFACE=$(nvram get lan_ifname)
 
-
 echo "0" > /proc/sys/net/bridge/bridge-nf-call-iptables
 echo "0" > /proc/sys/net/bridge/bridge-nf-call-ip6tables
 echo "1" > /proc/sys/net/netfilter/nf_conntrack_acct
@@ -54,21 +53,8 @@ setupIPLogger() {
 	echo "DEBUG: IP Logger Setup"
 }
 
-# uptime() {
-#
-# }
-
-# pingTest() {
-#
-# }
-
-# speedTest() {
-#
-# }
-
 readIPLogger() {
-	sample_time=$(date "+%s")
-	echo "Reading IP Logger ${sample_time}"
+	echo "Reading IP Logger ${1}"
 	#Read and reset counters
 	iptables -L WRTLINK -vnxZ > /tmp/traffic_$$.tmp
 
@@ -89,7 +75,7 @@ readIPLogger() {
 		OUT=$(cat /tmp/out_$$.tmp)
 
 		if [ ${IN} -gt 0 -o ${OUT} -gt 0 ];  then
-			echo ${MAC},${IP},${IN},${OUT} >> /tmp/wrt-link/${sample_time}.bw.db
+			echo ${MAC} ${IP} ${IN} ${OUT} >> /tmp/wrt-link/${1}.bw.db
 		fi
 	done
 
@@ -97,6 +83,17 @@ readIPLogger() {
 	rm -f /tmp/*_$$.tmp
 }
 
+readConntrack() {
+	echo "DEBUG: Read ip_conntrack"
+	sed -e 's/\[UNREPLIED\]//' /proc/net/ip_conntrack | awk '
+	/tcp/ { printf "%s %s %s %s %s %s %s \n", $1, $5, $6, $7, $8, $10, $16 }
+	/udp/ { printf "%s %s %s %s %s %s %s \n", $1, $4, $5, $6, $7, $9, $15 }
+	' | sed -e 's/src=//' -e 's/dst=//' -e 's/sport=//' -e 's/dport=//' -e 's/bytes=//g' > /tmp/wrt-link/${1}.bw.db
+
+	sh /proc/net/ip_conntrack_flush
+}
+
+# Always try to send all files waiting to go
 sendFiles() {
 	for FILE in $(ls /tmp/wrt-link/)
 	do
@@ -134,14 +131,19 @@ else
 
 	setupIPLogger
 
+	LASTUPDATE=$(date +%s)
+
 	while true
 	do
-		#pingTest
-		#speedTest
-		readIPLogger
-		setupIPLogger
-		sendFiles "${1}" "${2}" "${3}"
-		echo "DEBUG: sleep"
-		sleep 60
+		if [ $(date +%s) -gt $((${LASTUPDATE} + 59)) ]; then # Every 60 seconds
+			LASTUPDATE=$(date +%s)
+			echo "DEBUG: Update ${LASTUPDATE}"
+			readIPLogger ${LASTUPDATE}
+			setupIPLogger
+			readConntrack ${LASTUPDATE}
+			sendFiles "${1}" "${2}" "${3}"
+		fi
+
+		sleep 1
 	done
 fi
