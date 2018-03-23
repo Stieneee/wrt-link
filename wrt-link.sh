@@ -54,7 +54,7 @@ setupIPLogger() {
 }
 
 readIPLogger() {
-	echo "Reading IP Logger ${1}"
+	echo "DEBUG: Reading IP Logger ${1}"
 	#Read and reset counters
 	iptables -L WRTLINK -vnxZ > /tmp/traffic_$$.tmp
 
@@ -74,7 +74,7 @@ readIPLogger() {
 		IN=$(cat /tmp/in_$$.tmp)
 		OUT=$(cat /tmp/out_$$.tmp)
 
-		if [ ${IN} -gt 0 -o ${OUT} -gt 0 ];  then
+		if [ "$MAC" != "type" ]; then
 			echo ${MAC} ${IP} ${IN} ${OUT} >> /tmp/wrt-link/${1}.bw.db
 		fi
 	done
