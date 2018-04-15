@@ -1,11 +1,55 @@
 # wrt-link
 
-## Sample Set
+wrt-link is a shell script for per device bandwidth monitoring with DD-WRT routers.
+The script reports information from iptables and conntrack via scp.
+
+## Prerequisites
+
+A DD-WRT router with ssh access enabled.
+A seperate ssh server.
+
+In the event this script is being used in combination with logmy.io please follow the installation steps provided by that service.
+
+## Installing
+
+Ideally installation should occur via a startup script saved in the router's administraiton settings.
+For testing purposes the script can be deployed on the router manually.
+
+### Manual Setup Example
+
+SSH into your router and run the following commands.
+Generating a new rsa key and user accout on the remote server to be used by the script is advised.
+This guide dose not provide details of how to setup a remote server.
+
 ```
-cd /tmp/
-echo 192.168.0.101 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC9vLRw/Gm75FLq+ekh6OaveP3v/3Bu+IYYP2rmmNWKTmjWqFZkNZGVlIzkhNZVM4v/st4NJFsEBJZLHUWcgtR/YKtA3pLW4kSZ7w3IPcu5kPVFg/swtDkz0rthLy61lNYWJmxw6azc9xZnSEow2/RdbcxMJLYnyNU6FQDIGSb7PGi34LW067FJlQ7ZjWazRxLdwTGtXvq39lmfolBg6tapDxOwu1XAewspxTBb0qQ9dc6Jkm8V7XOuom096qsUHguGTAXc/YaCvdS6/9zajj7TMQ4AFTcpsvsxu0vohFKfuCpSoH+9PPDWOs6FSLkis34amo3TnJckPqzv0YTZxOeL > /tmp/root/.ssh/known_hosts 
+echo {{SSH ADDRESS}} {{REMOTE SERVER PUBLIC HOSTKEY}} > /tmp/root/.ssh/known_hosts
 cat > /tmp/wrt-link.id_rsa <<- EOM
-{{PASTE KEY}}
+{{PRIVATE KEY}}
 EOM
-./wrt-link.sh test 192.168.0.101 2222
+wget http://github.com/Stieneee/wrt-link/releases/download/latest/wrt-link.sh -O /tmp/wrt-link.sh
+/tmp/wrt-link.sh {ROUTER ID} {SERVER ADDRESS} {SERVER PORT}
 ```
+
+### Handling Report File
+
+The report file contains information in rows with two unique formats.
+
+First the MAC, IPs and iptables counters are reported.
+One line is present for each client of the devices regardless of whether or not the counters are non-zero.
+
+Second a row for each row from /proc/net/ip_conntrack.
+These rows have been condensed to save required bandwidth.
+
+Please review the script to fully undestand each row type.
+
+Counters on the router are reset during each cycle for iptables but not for conntrack.
+To properly account bandwidth information for each device differences must be calculated for the conntrack byte counters between each report.
+
+## Contributing
+Issues and pull requests are welcome.
+
+## License
+This project is licensed under the GPL-3.0 license - see the LICENSE file for details.
+
+## Acknowledgments
+This script was based on work from wrtbwmon.
