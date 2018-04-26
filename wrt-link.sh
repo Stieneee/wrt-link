@@ -58,8 +58,6 @@ readIPLogger() {
 	#Read and reset counters
 	iptables -L WRTLINK -vnxZ > /tmp/traffic_$$.tmp
 
-	cat /tmp/traffic_$$.tmp
-
 	grep -v "0x0" /proc/net/arp  | while read IP TYPE FLAGS MAC MASK IFACE
 	do
 		#Add new data to the graph. Count in Kbs to deal with 16 bits signed values (up to 2G only)
@@ -104,6 +102,9 @@ sendFiles() {
 		  echo "ERROR: scp failed!"
 			break
 		fi
+		if [ $(date +%s) -gt $((${LASTUPDATE} + 50)) ]; then # Every 60 seconds
+			break
+		fi
 	done
 }
 
@@ -135,7 +136,7 @@ else
 	while true
 	do
 		if [ $(date +%s) -gt $((${LASTUPDATE} + 59)) ]; then # Every 60 seconds
-			LASTUPDATE=$(date +%s)
+			LASTUPDATE=$((${LASTUPDATE} + 60))
 			echo "DEBUG: Update ${LASTUPDATE}"
 			readIPLogger ${LASTUPDATE}
 			setupIPLogger
