@@ -19,10 +19,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 LAN_IFACE=$(nvram get lan_ifname)
+SFE=$(nvram get sfe) # 1 if sfe enabled, 0 or nothing if disabled
 
-echo "0" > /proc/sys/net/bridge/bridge-nf-call-iptables
-echo "0" > /proc/sys/net/bridge/bridge-nf-call-ip6tables
-echo "1" > /proc/sys/net/netfilter/nf_conntrack_acct
+if [ ${SFE} -eq 1 ]; then
+	echo "1" > /proc/sys/net/netfilter/nf_conntrack_acct
+fi
 
 setupIPLogger() {
 	#Create the WRTLINK CHAIN (it doesn't matter if it already exists).
@@ -140,7 +141,9 @@ else
 			echo "DEBUG: Update ${LASTUPDATE}"
 			readIPLogger ${LASTUPDATE}
 			setupIPLogger
-			readConntrack ${LASTUPDATE}
+			if [ ${SFE} != 1 ]; then # skip conntrack if SFE
+				readConntrack ${LASTUPDATE}
+			fi
 			sendFiles "${1}" "${2}" "${3}"
 		fi
 
