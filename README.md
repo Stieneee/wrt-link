@@ -52,7 +52,7 @@ MAC, IPs and iptables counters are reported.
 One line is present for each client of the devices regardless of whether or not the counters are non-zero.
 
 ```
-dv {MAC} {IP} {Download} ${Upload}
+nf {MAC} {IP} {Download} ${Upload}
 ```
 
 #### Conntrack
