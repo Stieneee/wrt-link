@@ -22,14 +22,21 @@ LAN_IFACE=$(nvram get lan_ifname)
 SFE=$(nvram get sfe) # 1 if sfe enabled, 0 or nothing if disabled
 
 if [ ${SFE} -eq 1 ]; then
+	# Enable nf_conntrack_acct if sfe is enabled
 	echo "1" > /proc/sys/net/netfilter/nf_conntrack_acct
 fi
 
+versionReport() {
+	echo wl 0.1.0 >> /tmp/wrt-link/${1}.wrtlog
+	echo nf $(nvram get os_version) >> /tmp/wrt-link/${1}.wrtlog
+	echo se $(nvram get sfe) >> /tmp/wrt-link/${1}.wrtlog
+}
+
 setupIPLogger() {
-	#Create the WRTLINK CHAIN (it doesn't matter if it already exists).
+	# Create the WRTLINK CHAIN (it doesn't matter if it already exists).
 	iptables -N WRTLINK 2> /dev/null
 
-	#Add the WRTLINK CHAIN to the FORWARD chain (if non existing).
+	# Add the WRTLINK CHAIN to the FORWARD chain (if non existing).
 	iptables -L FORWARD --line-numbers -n | grep "WRTLINK" | grep "1" > /dev/null
 	if [ $? -ne 0 ]; then
 		iptables -L FORWARD -n | grep "WRTLINK" > /dev/null
@@ -40,7 +47,7 @@ setupIPLogger() {
 		iptables -I FORWARD -j WRTLINK
 	fi
 
-	#For each host in the ARP table
+	# For each host in the ARP table
 	grep ${LAN_IFACE} /proc/net/arp | while read IP TYPE FLAGS MAC MASK IFACE
 	do
 		#Add iptable rules (if non existing).
@@ -56,13 +63,12 @@ setupIPLogger() {
 
 readIPLogger() {
 	echo "DEBUG: Reading IP Logger ${1}"
-	#Read and reset counters
+	# Read and reset counters
 	iptables -L WRTLINK -vnxZ > /tmp/traffic_$$.tmp
 
 	grep -v "0x0" /proc/net/arp  | while read IP TYPE FLAGS MAC MASK IFACE
 	do
-		#Add new data to the graph. Count in Kbs to deal with 16 bits signed values (up to 2G only)
-		#Have to use temporary files because of crappy busybox shell TODO investigate
+		# Have to use temporary files
 		echo 0 > /tmp/in_$$.tmp
 		echo 0 > /tmp/out_$$.tmp
 		grep ${IP} /tmp/traffic_$$.tmp | while read PKTS BYTES TARGET PROT OPT IFIN IFOUT SRC DST
@@ -74,11 +80,11 @@ readIPLogger() {
 		OUT=$(cat /tmp/out_$$.tmp)
 
 		if [ "$MAC" != "type" ]; then
-			echo ${MAC} ${IP} ${IN} ${OUT} >> /tmp/wrt-link/${1}.bw.db
+			echo nf ${MAC} ${IP} ${IN} ${OUT} >> /tmp/wrt-link/${1}.wrtlog
 		fi
 	done
 
-	#Free some memory
+	# Free some memory
 	rm -f /tmp/*_$$.tmp
 }
 
@@ -87,10 +93,10 @@ readConntrack() {
 	sed -e 's/\[UNREPLIED\]//' /proc/net/ip_conntrack | awk '
 	/tcp/ { printf "%s %s %s %s %s %s %s \n", $1, $5, $6, $7, $8, $10, $16 }
 	/udp/ { printf "%s %s %s %s %s %s %s \n", $1, $4, $5, $6, $7, $9, $15 }
-	' | sed -e 's/src=//' -e 's/dst=//' -e 's/sport=//' -e 's/dport=//' -e 's/bytes=//g' >> /tmp/wrt-link/${1}.bw.db
+	' | sed -e 's/^/ct /' -e 's/src=//' -e 's/dst=//' -e 's/sport=//' -e 's/dport=//' -e 's/bytes=//g' >> /tmp/wrt-link/${1}.wrtlog
 }
 
-# Always try to send all files waiting to go
+# Always try to send all files
 sendFiles() {
 	for FILE in $(ls /tmp/wrt-link/)
 	do
@@ -103,7 +109,7 @@ sendFiles() {
 		  echo "ERROR: scp failed!"
 			break
 		fi
-		if [ $(date +%s) -gt $((${LASTUPDATE} + 50)) ]; then # Every 60 seconds
+		if [ $(date +%s) -gt $((${LASTUPDATE} + 50)) ]; then # Break if getting close to next report
 			break
 		fi
 	done
@@ -128,11 +134,13 @@ else
 
 	echo $$ > /tmp/wrt-link.pid
 
-	mkdir /tmp/wrt-link/
+	mkdir /tmp/wrt-link/ # The outgoing folder
 
 	setupIPLogger
 
 	LASTUPDATE=$(date +%s)
+
+	versionReport ${LASTUPDATE}
 
 	while true
 	do
@@ -141,7 +149,7 @@ else
 			echo "DEBUG: Update ${LASTUPDATE}"
 			readIPLogger ${LASTUPDATE}
 			setupIPLogger
-			if [ ${SFE} != 1 ]; then # skip conntrack if SFE
+			if [ ${SFE} -eq 1 ]; then
 				readConntrack ${LASTUPDATE}
 			fi
 			sendFiles "${1}" "${2}" "${3}"

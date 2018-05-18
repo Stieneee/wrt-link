@@ -19,7 +19,6 @@ For testing purposes the script can be deployed on the router manually.
 
 SSH into your router and run the following commands.
 Generating a new rsa key and user accout on the remote server to be used by the script is advised.
-This guide dose not provide details of how to setup a remote server.
 
 ```
 echo {{SSH ADDRESS}} {{REMOTE SERVER PUBLIC HOSTKEY}} > /tmp/root/.ssh/known_hosts
@@ -30,19 +29,43 @@ wget http://github.com/Stieneee/wrt-link/releases/download/latest/wrt-link.sh -O
 /tmp/wrt-link.sh {ROUTER ID} {SERVER ADDRESS} {SERVER PORT}
 ```
 
+Alternatively scp could be used to retrieve the file securely from the ssh server.
+
 ### Handling Report File
 
-The report file contains information in rows with two unique formats.
+The report file contains information in rows with several unique formats.
+Each format has a two character identifier at the beginning of the line.
 
-First the MAC, IPs and iptables counters are reported.
+#### Version Information
+
+Version information is reported in the frist report after the device restarts.
+
+```
+wl {WRT-LINK Version}
+dv {DD-WRT Version}
+se {SFE Enabled}
+```
+
+#### Iptables Report
+
+MAC, IPs and iptables counters are reported.
 One line is present for each client of the devices regardless of whether or not the counters are non-zero.
 
-Second a row for each row from /proc/net/ip_conntrack.
+```
+dv {MAC} {IP} {Download} ${Upload}
+```
+
+#### Conntrack
+
+A row for each row from /proc/net/ip_conntrack.
 These rows have been condensed to save required bandwidth.
 
-Please review the script to fully undestand each row type.
+```
+ct {Protocol} {Source IP} {Destination IP} {Source Port} {Destination Port} {Download Bytes} {Upload Bytes}
+```
 
-Counters on the router are reset during each cycle for iptables but not for conntrack.
+### Calculating Usage Data
+Byte counters on the router are reset during each cycle for iptables but not for conntrack.
 To properly account bandwidth information for each device differences must be calculated for the conntrack byte counters between each report.
 
 ## Contributing
