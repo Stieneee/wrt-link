@@ -28,7 +28,7 @@ fi
 
 versionReport() {
 	echo wl 0.1.0 >> /tmp/wrt-link/${1}.wrtlog
-	echo nf $(nvram get os_version) >> /tmp/wrt-link/${1}.wrtlog
+	echo dv $(nvram get os_version) >> /tmp/wrt-link/${1}.wrtlog
 	echo se $(nvram get sfe) >> /tmp/wrt-link/${1}.wrtlog
 }
 
