@@ -1,7 +1,7 @@
 # wrt-link
 
-wrt-link is a shell script for per device bandwidth monitoring with DD-WRT routers.
-The script reports information from iptables and conntrack via scp.
+wrt-link is a shell script for collecting statistcs and per device bandwidth monitoring with DD-WRT routers.
+The script reports information from a number of sources including the nvram, iptables and conntrack via scp.
 
 ## Prerequisites
 
@@ -44,6 +44,17 @@ Version information is reported in the frist report after the device restarts.
 wl {WRT-LINK Version}
 dv {DD-WRT Version}
 se {SFE Enabled}
+```
+
+#### Ping Report
+
+The result of a running ping command is concatinated and included with each report.
+The results can be parsed to determine packet loss and average ping statistics.
+
+```
+pt {Time (ms)} 
+pu # An unreachable host reponse.
+po # A timeout response.
 ```
 
 #### Iptables Report
