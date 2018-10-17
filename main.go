@@ -8,7 +8,6 @@ import (
 	"regexp"
 	"runtime"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -34,7 +33,6 @@ func main() {
 	for true {
 		time.Sleep(time.Second)
 	}
-
 }
 
 func ReadConnTrack() {
@@ -49,28 +47,23 @@ func ReadConnTrack() {
 		scanner := bufio.NewScanner(file)
 
 		for scanner.Scan() {
-			var temp string
 			text := scanner.Text()
 			cType := text[0:3]
 
 			if cType == "tcp" || cType == "udp" {
 				// fmt.Println(scanner.Text())
-				src := strings.Replace(srcR.FindString(text), "src=", "", -1)
-				dst := strings.Replace(dstR.FindString(text), "dst=", "", -1)
-				sport, _ := strconv.Atoi(strings.Replace(sportR.FindString(text), "sport=", "", -1))
-				dport, _ := strconv.Atoi(strings.Replace(dportR.FindString(text), "dport=", "", -1))
+				src := srcR.FindString(text)[4:]
+				dst := dstR.FindString(text)[4:]
+				sport, _ := strconv.Atoi(sportR.FindString(text)[6:])
+				dport, _ := strconv.Atoi(dportR.FindString(text)[6:])
 
-				packets := packetsR.FindAllString(text, -1)
-				temp = strings.Replace(packets[0], "packets=", "", -1)
-				spackets, _ := strconv.Atoi(temp)
-				temp = strings.Replace(packets[1], "packets=", "", -1)
-				dpackets, _ := strconv.Atoi(temp)
+				packets := packetsR.FindAllString(text, 2)
+				spackets, _ := strconv.Atoi(packets[0][8:])
+				dpackets, _ := strconv.Atoi(packets[1][8:])
 
-				bytes := bytesR.FindAllString(text, -1)
-				temp = strings.Replace(bytes[0], "bytes=", "", -1)
-				sbytes, _ := strconv.Atoi(temp)
-				temp = strings.Replace(bytes[1], "bytes=", "", -1)
-				dbytes, _ := strconv.Atoi(temp)
+				bytes := bytesR.FindAllString(text, 2)
+				sbytes, _ := strconv.Atoi(bytes[0][6:])
+				dbytes, _ := strconv.Atoi(bytes[1][6:])
 
 				// fmt.Printf("%s %s %s %d %d %d %d %d %d \n", cType, src, dst, sport, dport, spackets, dpackets, sbytes, dbytes)
 
@@ -108,7 +101,7 @@ func ReadConnTrack() {
 		}
 		elapsed := time.Since(start)
 		log.Printf("Run took %s", elapsed)
-		PrintMemUsage()
+		// PrintMemUsage()
 	}
 }
 
