@@ -13,8 +13,6 @@ type conn struct {
 	dbytes   int
 }
 
-var m = make(map[string]conn)
-
 func main() {
 	go readStatsScheduler()
 	for true {
@@ -28,7 +26,7 @@ func readStatsScheduler() {
 	}
 }
 
-func PrintMemUsage() {
+func printMemUsage() {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 	// For info on each, see: https://golang.org/pkg/runtime/#MemStats

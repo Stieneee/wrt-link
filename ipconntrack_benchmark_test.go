@@ -19,6 +19,34 @@ var dportR = regexp.MustCompile("dport=[0-9\\.]+")
 var packetsR = regexp.MustCompile("packets=[0-9\\.]+")
 var bytesR = regexp.MustCompile("bytes=[0-9\\.]+")
 
+func fileOpenScan() {
+	file, err := os.Open(".samples/ip_conntrack")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func TestFileOpenScanner(t *testing.T) {
+	start := time.Now()
+
+	for i := 0; i < 100; i++ {
+		fileOpenScan()
+	}
+
+	elapsed := time.Since(start)
+	log.Printf("File Scanner took %s", elapsed)
+}
+
 func _firstParse() {
 	file, err := os.Open(".samples/ip_conntrack")
 	if err != nil {

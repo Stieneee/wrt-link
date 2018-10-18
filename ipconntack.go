@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+var m = make(map[string]conn)
+
 func readConntrack(filename string) {
 	start := time.Now()
 	file, err := os.Open(filename)
@@ -96,8 +98,6 @@ func readConntrack(filename string) {
 			dbytes, _ := strconv.Atoi(bytes[1])
 
 			// fmt.Printf("%s %s %s %d %d %d %d %d %d \n", cType, src, dst, sport, dport, spackets, dpackets, sbytes, dbytes)
-
-			return
 
 			hash := src + dst + strconv.Itoa(sport) + strconv.Itoa(dport)
 			c, ok := m[hash]
