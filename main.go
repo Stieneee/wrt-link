@@ -6,13 +6,6 @@ import (
 	"time"
 )
 
-type conn struct {
-	spackets int
-	sbytes   int
-	dpackets int
-	dbytes   int
-}
-
 func main() {
 	go readStatsScheduler()
 	for true {

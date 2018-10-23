@@ -8,6 +8,13 @@ import (
 	"time"
 )
 
+type conn struct {
+	spackets int
+	sbytes   int
+	dpackets int
+	dbytes   int
+}
+
 var m = make(map[string]conn)
 
 func readConntrack(filename string) {

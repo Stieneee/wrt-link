@@ -12,12 +12,12 @@ import (
 )
 
 // These are expensive
-var srcR = regexp.MustCompile("src=[0-9\\.]+")
-var dstR = regexp.MustCompile("dst=[0-9\\.]+")
-var sportR = regexp.MustCompile("sport=[0-9\\.]+")
-var dportR = regexp.MustCompile("dport=[0-9\\.]+")
-var packetsR = regexp.MustCompile("packets=[0-9\\.]+")
-var bytesR = regexp.MustCompile("bytes=[0-9\\.]+")
+// var srcR = regexp.MustCompile("src=[0-9\\.]+")
+// var dstR = regexp.MustCompile("dst=[0-9\\.]+")
+// var sportR = regexp.MustCompile("sport=[0-9\\.]+")
+// var dportR = regexp.MustCompile("dport=[0-9\\.]+")
+// var packetsR = regexp.MustCompile("packets=[0-9\\.]+")
+// var bytesR = regexp.MustCompile("bytes=[0-9\\.]+")
 
 func fileOpenScan() {
 	file, err := os.Open(".samples/ip_conntrack")
@@ -47,7 +47,7 @@ func TestFileOpenScanner(t *testing.T) {
 	log.Printf("File Scanner took %s", elapsed)
 }
 
-func _firstParse() {
+func firstParse() {
 	file, err := os.Open(".samples/ip_conntrack")
 	if err != nil {
 		log.Fatal(err)
@@ -87,108 +87,200 @@ func TestFirstParse(t *testing.T) {
 	start := time.Now()
 
 	for i := 0; i < 100; i++ {
-		_firstParse()
+		firstParse()
 	}
 
 	elapsed := time.Since(start)
 	log.Printf("First took %s", elapsed)
 }
 
-func _secondParse() {
-	file, err := os.Open(".samples/ip_conntrack")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
+// func _secondParse() {
+// 	file, err := os.Open(".samples/ip_conntrack")
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	defer file.Close()
 
-	scanner := bufio.NewScanner(file)
+// 	scanner := bufio.NewScanner(file)
 
-	for scanner.Scan() {
-		text := scanner.Text()
-		cType := text[0:3]
+// 	for scanner.Scan() {
+// 		text := scanner.Text()
+// 		cType := text[0:3]
 
-		if cType == "tcp" || cType == "udp" {
-			// fmt.Println(scanner.Text())
-			_ = srcR.FindString(text)[4:]
-			_ = dstR.FindString(text)[4:]
-			_, _ = strconv.Atoi(strings.Replace(sportR.FindString(text), "sport=", "", -1))
-			_, _ = strconv.Atoi(strings.Replace(dportR.FindString(text), "dport=", "", -1))
+// 		if cType == "tcp" || cType == "udp" {
+// 			// fmt.Println(scanner.Text())
+// 			_ = srcR.FindString(text)[4:]
+// 			_ = dstR.FindString(text)[4:]
+// 			_, _ = strconv.Atoi(strings.Replace(sportR.FindString(text), "sport=", "", -1))
+// 			_, _ = strconv.Atoi(strings.Replace(dportR.FindString(text), "dport=", "", -1))
 
-			packets := packetsR.FindAllString(text, 2)
-			_, _ = strconv.Atoi(strings.Replace(packets[0], "packets=", "", -1))
-			_, _ = strconv.Atoi(strings.Replace(packets[1], "packets=", "", -1))
+// 			packets := packetsR.FindAllString(text, 2)
+// 			_, _ = strconv.Atoi(strings.Replace(packets[0], "packets=", "", -1))
+// 			_, _ = strconv.Atoi(strings.Replace(packets[1], "packets=", "", -1))
 
-			bytes := bytesR.FindAllString(text, 2)
-			_, _ = strconv.Atoi(strings.Replace(bytes[0], "bytes=", "", -1))
-			_, _ = strconv.Atoi(strings.Replace(bytes[1], "bytes=", "", -1))
-		}
+// 			bytes := bytesR.FindAllString(text, 2)
+// 			_, _ = strconv.Atoi(strings.Replace(bytes[0], "bytes=", "", -1))
+// 			_, _ = strconv.Atoi(strings.Replace(bytes[1], "bytes=", "", -1))
+// 		}
 
-	}
+// 	}
 
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
-	}
-}
+// 	if err := scanner.Err(); err != nil {
+// 		log.Fatal(err)
+// 	}
+// }
 
-func TestSecondParse(t *testing.T) {
-	start := time.Now()
+// func TestSecondParse(t *testing.T) {
+// 	start := time.Now()
 
-	for i := 0; i < 100; i++ {
-		_secondParse()
-	}
+// 	for i := 0; i < 100; i++ {
+// 		_secondParse()
+// 	}
 
-	elapsed := time.Since(start)
-	log.Printf("Second took %s", elapsed)
-}
+// 	elapsed := time.Since(start)
+// 	log.Printf("Second took %s", elapsed)
+// }
 
-func _thirdParse() {
-	file, err := os.Open(".samples/ip_conntrack")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
+// func _thirdParse() {
+// 	file, err := os.Open(".samples/ip_conntrack")
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	defer file.Close()
 
-	scanner := bufio.NewScanner(file)
+// 	scanner := bufio.NewScanner(file)
 
-	for scanner.Scan() {
-		text := scanner.Text()
-		cType := text[0:3]
+// 	for scanner.Scan() {
+// 		text := scanner.Text()
+// 		cType := text[0:3]
 
-		if cType == "tcp" || cType == "udp" {
-			// fmt.Println(scanner.Text())
-			_ = srcR.FindString(text)[4:]
-			_ = dstR.FindString(text)[4:]
-			_, _ = strconv.Atoi(sportR.FindString(text)[6:])
-			_, _ = strconv.Atoi(dportR.FindString(text)[6:])
+// 		if cType == "tcp" || cType == "udp" {
+// 			// fmt.Println(scanner.Text())
+// 			_ = srcR.FindString(text)[4:]
+// 			_ = dstR.FindString(text)[4:]
+// 			_, _ = strconv.Atoi(sportR.FindString(text)[6:])
+// 			_, _ = strconv.Atoi(dportR.FindString(text)[6:])
 
-			packets := packetsR.FindAllString(text, 2)
-			_, _ = strconv.Atoi(packets[0][8:])
-			_, _ = strconv.Atoi(packets[1][8:])
+// 			packets := packetsR.FindAllString(text, 2)
+// 			_, _ = strconv.Atoi(packets[0][8:])
+// 			_, _ = strconv.Atoi(packets[1][8:])
 
-			bytes := bytesR.FindAllString(text, 2)
-			_, _ = strconv.Atoi(bytes[0][6:])
-			_, _ = strconv.Atoi(bytes[1][6:])
-		}
+// 			bytes := bytesR.FindAllString(text, 2)
+// 			_, _ = strconv.Atoi(bytes[0][6:])
+// 			_, _ = strconv.Atoi(bytes[1][6:])
+// 		}
 
-	}
+// 	}
 
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
-	}
-}
+// 	if err := scanner.Err(); err != nil {
+// 		log.Fatal(err)
+// 	}
+// }
 
-func TestThirdParse(t *testing.T) {
-	start := time.Now()
+// func TestThirdParse(t *testing.T) {
+// 	start := time.Now()
 
-	for i := 0; i < 100; i++ {
-		_thirdParse()
-	}
+// 	for i := 0; i < 100; i++ {
+// 		_thirdParse()func _secondParse() {
+// 	file, err := os.Open(".samples/ip_conntrack")
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	defer file.Close()
 
-	elapsed := time.Since(start)
-	log.Printf("Third took %s", elapsed)
-}
+// 	scanner := bufio.NewScanner(file)
 
-func _forthParse() {
+// 	for scanner.Scan() {
+// 		text := scanner.Text()
+// 		cType := text[0:3]
+
+// 		if cType == "tcp" || cType == "udp" {
+// 			// fmt.Println(scanner.Text())
+// 			_ = srcR.FindString(text)[4:]
+// 			_ = dstR.FindString(text)[4:]
+// 			_, _ = strconv.Atoi(strings.Replace(sportR.FindString(text), "sport=", "", -1))
+// 			_, _ = strconv.Atoi(strings.Replace(dportR.FindString(text), "dport=", "", -1))
+
+// 			packets := packetsR.FindAllString(text, 2)
+// 			_, _ = strconv.Atoi(strings.Replace(packets[0], "packets=", "", -1))
+// 			_, _ = strconv.Atoi(strings.Replace(packets[1], "packets=", "", -1))
+
+// 			bytes := bytesR.FindAllString(text, 2)
+// 			_, _ = strconv.Atoi(strings.Replace(bytes[0], "bytes=", "", -1))
+// 			_, _ = strconv.Atoi(strings.Replace(bytes[1], "bytes=", "", -1))
+// 		}
+
+// 	}
+
+// 	if err := scanner.Err(); err != nil {
+// 		log.Fatal(err)
+// 	}
+// }
+
+// func TestSecondParse(t *testing.T) {
+// 	start := time.Now()
+
+// 	for i := 0; i < 100; i++ {
+// 		_secondParse()
+// 	}
+
+// 	elapsed := time.Since(start)
+// 	log.Printf("Second took %s", elapsed)
+// }
+
+// func _thirdParse() {
+// 	file, err := os.Open(".samples/ip_conntrack")
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	defer file.Close()
+
+// 	scanner := bufio.NewScanner(file)
+
+// 	for scanner.Scan() {
+// 		text := scanner.Text()
+// 		cType := text[0:3]
+
+// 		if cType == "tcp" || cType == "udp" {
+// 			// fmt.Println(scanner.Text())
+// 			_ = srcR.FindString(text)[4:]
+// 			_ = dstR.FindString(text)[4:]
+// 			_, _ = strconv.Atoi(sportR.FindString(text)[6:])
+// 			_, _ = strconv.Atoi(dportR.FindString(text)[6:])
+
+// 			packets := packetsR.FindAllString(text, 2)
+// 			_, _ = strconv.Atoi(packets[0][8:])
+// 			_, _ = strconv.Atoi(packets[1][8:])
+
+// 			bytes := bytesR.FindAllString(text, 2)
+// 			_, _ = strconv.Atoi(bytes[0][6:])
+// 			_, _ = strconv.Atoi(bytes[1][6:])
+// 		}
+
+// 	}
+
+// 	if err := scanner.Err(); err != nil {
+// 		log.Fatal(err)
+// 	}
+// }
+
+// func TestThirdParse(t *testing.T) {
+// 	start := time.Now()
+
+// 	for i := 0; i < 100; i++ {
+// 		_thirdParse()
+// 	}
+
+// 	elapsed := time.Since(start)
+// 	log.Printf("Third took %s", elapsed)
+
+// 	}
+
+// 	elapsed := time.Since(start)
+// 	log.Printf("Third took %s", elapsed)
+// }
+
+func forthParse() {
 	file, err := os.Open(".samples/ip_conntrack")
 	if err != nil {
 		log.Fatal(err)
@@ -288,7 +380,7 @@ func TestFourParse(t *testing.T) {
 	start := time.Now()
 
 	for i := 0; i < 100; i++ {
-		_forthParse()
+		forthParse()
 	}
 
 	elapsed := time.Since(start)

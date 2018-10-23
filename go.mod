@@ -1,4 +1,4 @@
-module github/stieneee/go-wrt-test
+module github/stieneee/wrt-link
 
 require (
 	github.com/golang/protobuf v1.2.0
