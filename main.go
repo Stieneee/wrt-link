@@ -31,7 +31,7 @@ func main() {
 	setupIptable()
 
 	go readConntrackScheduler()
-	go readStatsScheduler()
+	go reporter()
 	for true {
 		time.Sleep(time.Minute)
 
@@ -44,9 +44,14 @@ func readConntrackScheduler() {
 	}
 }
 
-func readStatsScheduler() {
+func reporter() {
 	for range time.Tick(time.Minute) {
-		readConntrack("/proc/net/ip_conntrack")
+		log.Println("Time to Report")
+		// Call the Conntrack thread to report current totals via channel.
+		readIptable()
+		setupIptable()
+		// Grad other stats
+		// Send full report
 	}
 }
 
