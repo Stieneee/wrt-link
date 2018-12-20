@@ -8,13 +8,6 @@ import (
 	"strings"
 )
 
-type iptableData struct {
-	ip   string
-	mac  string
-	up   int64
-	down int64
-}
-
 // TODO investigate if we are making repeate entries in iptable
 // TODO what the behvaiour of iptables if there are multiple entries. first match? should we be adding? are later entries replacing already read values.
 
@@ -57,7 +50,7 @@ func setupIptable() {
 			if len(feilds) >= 1 {
 				err = exec.Command("sh", "-c", "'iptables -nL WRTLINK | grep \""+feilds[0]+"\"'").Run()
 				if err != nil {
-					log.Println("Adding ip rules for " + feilds[0])
+					log.Println("Adding Ip rules for " + feilds[0])
 					_ = exec.Command("iptables", "-I", "WRTLINK", "-d", feilds[0], "-j", "RETURN").Run()
 					_ = exec.Command("iptables", "-I", "WRTLINK", "-s", feilds[0], "-j", "RETURN").Run()
 				}
@@ -66,9 +59,9 @@ func setupIptable() {
 	}
 }
 
-func readArp() map[string]iptableData {
+func readArp() map[string]Netfilter {
 
-	var arpData = make(map[string]iptableData)
+	var arpData = make(map[string]Netfilter)
 
 	out, err := exec.Command("grep", "-v", "\"0x0\"", "/proc/net/arp").Output()
 	if err != nil {
@@ -88,17 +81,17 @@ func readArp() map[string]iptableData {
 			if len(feilds) >= 6 {
 				dev, ok := arpData[feilds[0]]
 				if !ok {
-					arpData[feilds[0]] = iptableData{
-						ip:   feilds[0],
-						mac:  feilds[3],
-						up:   0,
-						down: 0,
+					arpData[feilds[0]] = Netfilter{
+						Ip:  feilds[0],
+						Mac: feilds[3],
+						Out: 0,
+						In:  0,
 					}
 				} else {
-					dev.ip = feilds[0]
-					dev.mac = feilds[3]
-					dev.up = 0
-					dev.down = 0
+					dev.Ip = feilds[0]
+					dev.Mac = feilds[3]
+					dev.Out = 0
+					dev.In = 0
 				}
 			}
 		}
@@ -107,7 +100,7 @@ func readArp() map[string]iptableData {
 	return arpData
 }
 
-func readIptable() {
+func readIptable() []*Netfilter {
 	arpData := readArp()
 
 	out, err := exec.Command("iptables", "-L", "WRTLINK", "-vnxZ").Output()
@@ -126,7 +119,7 @@ func readIptable() {
 				if !ok {
 					// hmmmm device missing
 				} else {
-					dev.down, _ = strconv.ParseInt(fields[1], 10, 64)
+					dev.In, _ = strconv.ParseUint(fields[1], 10, 32)
 					fmt.Println(dev)
 				}
 
@@ -136,11 +129,19 @@ func readIptable() {
 				if !ok {
 					// hmmmm device missing
 				} else {
-					dev.up, _ = strconv.ParseInt(fields[1], 10, 64)
+					dev.Out, _ = strconv.ParseUint(fields[1], 10, 32)
 				}
 			} else {
 				// TODO hmmmm ipv6?
 			}
 		}
 	}
+
+	// Turn map into a array and return
+	var iptableResult []*Netfilter
+	for _, value := range arpData {
+		iptableResult = append(iptableResult, &value)
+	}
+
+	return iptableResult
 }

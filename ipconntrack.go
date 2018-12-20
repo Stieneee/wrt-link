@@ -8,14 +8,17 @@ import (
 	"time"
 )
 
-type conn struct {
-	spackets int
-	sbytes   int
-	dpackets int
-	dbytes   int
-}
+var m = make(map[string]Conntrack)
 
-var m = make(map[string]conn)
+func reportConntract() []*Conntrack {
+	var connTrackResult []*Conntrack
+	for key, value := range m {
+		connTrackResult = append(connTrackResult, &value)
+		delete(m, key)
+	}
+
+	return connTrackResult
+}
 
 func readConntrack(filename string) {
 	start := time.Now()
@@ -33,10 +36,10 @@ func readConntrack(filename string) {
 
 		if cType == "tcp" || cType == "udp" {
 			// fmt.Println(scanner.Text())
-			src := ""
-			dst := ""
-			dportS := ""
-			sportS := ""
+			Src := ""
+			Dst := ""
+			DportS := ""
+			SportS := ""
 			var packets [2]string
 			packets[0] = ""
 			packets[1] = ""
@@ -47,30 +50,30 @@ func readConntrack(filename string) {
 			for i := 0; i < len(text); i++ {
 				switch text[i] {
 				case 's':
-					if src == "" && string(text[i:i+4]) == "src=" {
+					if Src == "" && string(text[i:i+4]) == "Src=" {
 						j := i + 4
 						for ; text[j] != ' '; j++ {
 						}
-						src = string(text[i+4 : j])
+						Src = string(text[i+4 : j])
 					}
-					if sportS == "" && string(text[i:i+6]) == "sport=" {
+					if SportS == "" && string(text[i:i+6]) == "Sport=" {
 						j := i + 6
 						for ; text[j] != ' '; j++ {
 						}
-						sportS = string(text[i+6 : j])
+						SportS = string(text[i+6 : j])
 					}
 				case 'd':
-					if dst == "" && string(text[i:i+4]) == "dst=" {
+					if Dst == "" && string(text[i:i+4]) == "Dst=" {
 						j := i + 4
 						for ; text[j] != ' '; j++ {
 						}
-						dst = string(text[i+4 : j])
+						Dst = string(text[i+4 : j])
 					}
-					if dportS == "" && string(text[i:i+6]) == "dport=" {
+					if DportS == "" && string(text[i:i+6]) == "Dport=" {
 						j := i + 6
 						for ; text[j] != ' '; j++ {
 						}
-						dportS = string(text[i+6 : j])
+						DportS = string(text[i+6 : j])
 					}
 				case 'p':
 					if (packets[0] == "" || packets[1] == "") && string(text[i:i+8]) == "packets=" {
@@ -97,39 +100,41 @@ func readConntrack(filename string) {
 				}
 			}
 
-			sport, _ := strconv.Atoi(sportS)
-			dport, _ := strconv.Atoi(dportS)
-			spackets, _ := strconv.Atoi(packets[0])
-			dpackets, _ := strconv.Atoi(packets[1])
-			sbytes, _ := strconv.Atoi(bytes[0])
-			dbytes, _ := strconv.Atoi(bytes[1])
+			Sport, _ := strconv.Atoi(SportS)
+			Dport, _ := strconv.Atoi(DportS)
+			tmp, _ := strconv.ParseUint(packets[0], 10, 32)
+			Srcp := uint32(tmp)
+			tmp, _ = strconv.ParseUint(packets[1], 10, 32)
+			Dstp := uint32(tmp)
+			Out, _ := strconv.ParseUint(bytes[0], 10, 64)
+			In, _ := strconv.ParseUint(bytes[1], 10, 64)
 
-			// fmt.Printf("%s %s %s %d %d %d %d %d %d \n", cType, src, dst, sport, dport, spackets, dpackets, sbytes, dbytes)
+			// fmt.Printf("%s %s %s %d %d %d %d %d %d \n", cType, Src, Dst, Sport, Dport, Srcp, Dstp, Out, In)
 
-			hash := src + dst + strconv.Itoa(sport) + strconv.Itoa(dport)
+			hash := Src + Dst + strconv.Itoa(Sport) + strconv.Itoa(Dport)
 			c, ok := m[hash]
 			if !ok {
-				m[hash] = conn{spackets: spackets, dpackets: dpackets, sbytes: sbytes, dbytes: dbytes}
+				m[hash] = Conntrack{Srcp: Srcp, Dstp: Dstp, Out: Out, In: In}
 				// fmt.Println("new")
-			} else if c.spackets > spackets || c.dpackets > dpackets {
+			} else if c.Srcp > Srcp || c.Dstp > Dstp {
 				// replace old
-				c.spackets = spackets
-				c.dpackets = dpackets
-				c.sbytes = sbytes
-				c.dbytes = dbytes
+				c.Srcp = Srcp
+				c.Dstp = Dstp
+				c.Out = Out
+				c.In = In
 				// fmt.Println("replace")
 			} else {
-				// spacketsDelta := spackets - c.spackets
-				// dpacketsDelta := dpackets - c.dpackets
-				// sbytresDelta := sbytes - c.sbytes
-				// dbytesDelta := dbytes - c.dbytes
+				// SrcpDelta := Srcp - c.Srcp
+				// DstpDelta := Dstp - c.Dstp
+				// sbytresDelta := Out - c.Out
+				// inDelta := In - c.In
 
-				c.spackets = spackets
-				c.dpackets = dpackets
-				c.sbytes = sbytes
-				c.dbytes = dbytes
-				// if spacketsDelta != 0 || dpacketsDelta != 0 || sbytresDelta != 0 || dbytesDelta != 0 {
-				// 	fmt.Println(spacketsDelta, dpacketsDelta, sbytresDelta, dbytesDelta)
+				c.Srcp = Srcp
+				c.Dstp = Dstp
+				c.Out = Out
+				c.In = In
+				// if SrcpDelta != 0 || DstpDelta != 0 || sbytresDelta != 0 || inDelta != 0 {
+				// 	fmt.Println(SrcpDelta, DstpDelta, sbytresDelta, inDelta)
 				// }
 			}
 		}

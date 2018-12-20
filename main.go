@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"google.golang.org/grpc"
 	"log"
 	"os/exec"
 	"runtime"
@@ -27,31 +29,54 @@ func main() {
 	}
 	fmt.Printf("Lan Interface is %s\n", lanInterface)
 
+	conn, err := grpc.Dial("192.168.0.50:50051", grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+
 	log.Println("Setting up Ip tables")
 	setupIptable()
+	client := NewReporterClient(conn)
 
-	go readConntrackScheduler()
-	go reporter()
-	for true {
-		time.Sleep(time.Minute)
+	conntrackResultChan := make(chan []*Conntrack, 2)
+	requestConntrackChan := make(chan bool, 2)
 
-	}
-}
-
-func readConntrackScheduler() {
-	for range time.Tick(time.Second) {
-		readConntrack("/proc/net/ip_conntrack")
-	}
-}
-
-func reporter() {
+	go readConntrackScheduler(conntrackResultChan, requestConntrackChan)
 	for range time.Tick(time.Minute) {
 		log.Println("Time to Report")
+
 		// Call the Conntrack thread to report current totals via channel.
-		readIptable()
+		requestConntrackChan <- true
+
+		// Iptables
+		var iptableResult = readIptable()
 		setupIptable()
+
 		// Grad other stats
+
+		// Grab results from other go routines
+		var conntrackResult = <-conntrackResultChan
+
 		// Send full report
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+		defer cancel()
+		client.ReportData(ctx, &DataReport{
+			Time: uint64(time.Now().Unix()),
+			Nf:   iptableResult,
+			Ct:   conntrackResult,
+		})
+	}
+}
+
+func readConntrackScheduler(conntrackResultChan chan<- []*Conntrack, requestConntrackChan <-chan bool) {
+	if len(requestConntrackChan) > 0 {
+		log.Println("Conntrack report requested")
+		_ = <-requestConntrackChan
+		conntrackResultChan <- reportConntract()
+	}
+	for range time.Tick(time.Second) {
+		readConntrack("/proc/net/ip_conntrack")
 	}
 }
 
