@@ -37,4 +37,6 @@ message conntrack {
     uint32 dstp = 5;
     uint64 in = 6;
     uint64 out = 7;
+    uint32 inPackets = 8;
+    uint32 outPackets = 9;
 };

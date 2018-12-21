@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	// "fmt"
 	"log"
 	"os/exec"
 	"strconv"
@@ -75,9 +75,9 @@ func readArp() map[string]Netfilter {
 				continue
 			}
 			feilds := strings.Split(line, " ")
-			for _, feild := range feilds {
-				fmt.Println(feild)
-			}
+			// for _, feild := range feilds {
+			// 	// fmt.Println(feild)
+			// }
 			if len(feilds) >= 6 {
 				dev, ok := arpData[feilds[0]]
 				if !ok {
@@ -120,7 +120,7 @@ func readIptable() []*Netfilter {
 					// hmmmm device missing
 				} else {
 					dev.In, _ = strconv.ParseUint(fields[1], 10, 32)
-					fmt.Println(dev)
+					// fmt.Println(dev)
 				}
 
 			} else if fields[8] == "0.0.0.0/0" {

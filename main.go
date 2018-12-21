@@ -29,7 +29,7 @@ func main() {
 	}
 	fmt.Printf("Lan Interface is %s\n", lanInterface)
 
-	conn, err := grpc.Dial("192.168.0.50:50051", grpc.WithInsecure())
+	conn, err := grpc.Dial("192.168.0.141:50051", grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
@@ -52,30 +52,37 @@ func main() {
 		// Iptables
 		var iptableResult = readIptable()
 		setupIptable()
+		log.Println("Report got iptables")
 
 		// Grad other stats
 
 		// Grab results from other go routines
 		var conntrackResult = <-conntrackResultChan
+		log.Println("Report got conntrackResults")
 
 		// Send full report
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 		defer cancel()
-		client.ReportData(ctx, &DataReport{
+		response, err := client.ReportData(ctx, &DataReport{
 			Time: uint64(time.Now().Unix()),
 			Nf:   iptableResult,
 			Ct:   conntrackResult,
 		})
+		if err != nil {
+			log.Println("Error when calling ReportData: %s", err)
+		} else {
+			log.Printf("Response from server: %t", response.Success)
+		}
 	}
 }
 
 func readConntrackScheduler(conntrackResultChan chan<- []*Conntrack, requestConntrackChan <-chan bool) {
-	if len(requestConntrackChan) > 0 {
-		log.Println("Conntrack report requested")
-		_ = <-requestConntrackChan
-		conntrackResultChan <- reportConntract()
-	}
 	for range time.Tick(time.Second) {
+		if len(requestConntrackChan) > 0 {
+			log.Println("Conntrack report requested")
+			_ = <-requestConntrackChan
+			conntrackResultChan <- reportConntract()
+		}
 		readConntrack("/proc/net/ip_conntrack")
 	}
 }

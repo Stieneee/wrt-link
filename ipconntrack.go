@@ -5,16 +5,48 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
-var m = make(map[string]Conntrack)
+type ConntrackLog struct {
+	time            uint64
+	proto           string
+	src             string
+	dst             string
+	srcp            uint32
+	dstp            uint32
+	in              uint64
+	out             uint64
+	inPackets       uint32
+	outPackets      uint32
+	inDelta         uint64
+	outDelta        uint64
+	inPacketsDelta  uint32
+	outPacketsDelta uint32
+}
+
+var m = make(map[string]ConntrackLog)
 
 func reportConntract() []*Conntrack {
 	var connTrackResult []*Conntrack
-	for key, value := range m {
-		connTrackResult = append(connTrackResult, &value)
-		delete(m, key)
+	for _, value := range m {
+		connTrackResult = append(connTrackResult, &Conntrack{
+			Proto:      value.proto,
+			Src:        value.src,
+			Dst:        value.dst,
+			Srcp:       value.srcp,
+			Dstp:       value.dstp,
+			In:         value.inDelta,
+			Out:        value.outDelta,
+			InPackets:  value.inPacketsDelta,
+			OutPackets: value.outPacketsDelta,
+		})
+
+		value.inDelta = 0
+		value.outDelta = 0
+		value.inPacketsDelta = 0
+		value.outPacketsDelta = 0
 	}
 
 	return connTrackResult
@@ -36,10 +68,10 @@ func readConntrack(filename string) {
 
 		if cType == "tcp" || cType == "udp" {
 			// fmt.Println(scanner.Text())
-			Src := ""
-			Dst := ""
-			DportS := ""
-			SportS := ""
+			src := ""
+			dst := ""
+			dportS := ""
+			sportS := ""
 			var packets [2]string
 			packets[0] = ""
 			packets[1] = ""
@@ -50,30 +82,30 @@ func readConntrack(filename string) {
 			for i := 0; i < len(text); i++ {
 				switch text[i] {
 				case 's':
-					if Src == "" && string(text[i:i+4]) == "Src=" {
+					if src == "" && string(text[i:i+4]) == "src=" {
 						j := i + 4
 						for ; text[j] != ' '; j++ {
 						}
-						Src = string(text[i+4 : j])
+						src = string(text[i+4 : j])
 					}
-					if SportS == "" && string(text[i:i+6]) == "Sport=" {
+					if sportS == "" && string(text[i:i+6]) == "sport=" {
 						j := i + 6
 						for ; text[j] != ' '; j++ {
 						}
-						SportS = string(text[i+6 : j])
+						sportS = string(text[i+6 : j])
 					}
 				case 'd':
-					if Dst == "" && string(text[i:i+4]) == "Dst=" {
+					if dst == "" && string(text[i:i+4]) == "dst=" {
 						j := i + 4
 						for ; text[j] != ' '; j++ {
 						}
-						Dst = string(text[i+4 : j])
+						dst = string(text[i+4 : j])
 					}
-					if DportS == "" && string(text[i:i+6]) == "Dport=" {
+					if dportS == "" && string(text[i:i+6]) == "dport=" {
 						j := i + 6
 						for ; text[j] != ' '; j++ {
 						}
-						DportS = string(text[i+6 : j])
+						dportS = string(text[i+6 : j])
 					}
 				case 'p':
 					if (packets[0] == "" || packets[1] == "") && string(text[i:i+8]) == "packets=" {
@@ -100,42 +132,81 @@ func readConntrack(filename string) {
 				}
 			}
 
-			Sport, _ := strconv.Atoi(SportS)
-			Dport, _ := strconv.Atoi(DportS)
-			tmp, _ := strconv.ParseUint(packets[0], 10, 32)
-			Srcp := uint32(tmp)
+			srcSlice := strings.Split(src, ".")
+			dstSlice := strings.Split(dst, ".")
+
+			if srcSlice[0] == dstSlice[0] && srcSlice[1] == dstSlice[1] && srcSlice[2] == dstSlice[2] {
+				// same network don't care to log atm
+				continue
+			}
+
+			tmp, _ := strconv.ParseUint(sportS, 10, 32)
+			srcp := uint32(tmp)
+			tmp, _ = strconv.ParseUint(dportS, 10, 32)
+			dstp := uint32(tmp)
+			tmp, _ = strconv.ParseUint(packets[0], 10, 32)
+			srcPackets := uint32(tmp)
 			tmp, _ = strconv.ParseUint(packets[1], 10, 32)
-			Dstp := uint32(tmp)
-			Out, _ := strconv.ParseUint(bytes[0], 10, 64)
-			In, _ := strconv.ParseUint(bytes[1], 10, 64)
+			dstPackets := uint32(tmp)
+			in, _ := strconv.ParseUint(bytes[0], 10, 64)
+			out, _ := strconv.ParseUint(bytes[1], 10, 64)
 
-			// fmt.Printf("%s %s %s %d %d %d %d %d %d \n", cType, Src, Dst, Sport, Dport, Srcp, Dstp, Out, In)
+			// fmt.Printf("%s %s %s %d %d %d %d %d %d \n", cType, src, dst, sport, dport, spackets, dpackets, sbytes, dbytes)
 
-			hash := Src + Dst + strconv.Itoa(Sport) + strconv.Itoa(Dport)
+			hash := src + dst + sportS + dportS
 			c, ok := m[hash]
 			if !ok {
-				m[hash] = Conntrack{Srcp: Srcp, Dstp: Dstp, Out: Out, In: In}
+				// log.Println("track new")
+				m[hash] = ConntrackLog{
+					time:            uint64(time.Now().Unix()),
+					proto:           cType,
+					src:             src,
+					dst:             dst,
+					srcp:            srcp,
+					dstp:            dstp,
+					in:              in,
+					out:             out,
+					inPackets:       srcPackets,
+					outPackets:      dstPackets,
+					inDelta:         in,
+					outDelta:        out,
+					inPacketsDelta:  srcPackets,
+					outPacketsDelta: dstPackets,
+				}
 				// fmt.Println("new")
-			} else if c.Srcp > Srcp || c.Dstp > Dstp {
-				// replace old
-				c.Srcp = Srcp
-				c.Dstp = Dstp
-				c.Out = Out
-				c.In = In
-				// fmt.Println("replace")
-			} else {
-				// SrcpDelta := Srcp - c.Srcp
-				// DstpDelta := Dstp - c.Dstp
-				// sbytresDelta := Out - c.Out
-				// inDelta := In - c.In
+			} else if c.inPackets > srcPackets || c.outPackets > dstPackets {
+				// the connection seems to have less packets then previously seen the connection must have been reset
+				log.Println("connection restart overwrite")
+				c.time = uint64(time.Now().Unix())
 
-				c.Srcp = Srcp
-				c.Dstp = Dstp
-				c.Out = Out
-				c.In = In
-				// if SrcpDelta != 0 || DstpDelta != 0 || sbytresDelta != 0 || inDelta != 0 {
-				// 	fmt.Println(SrcpDelta, DstpDelta, sbytresDelta, inDelta)
-				// }
+				c.inDelta = c.inDelta + in
+				c.outDelta = c.outDelta + out
+				c.inPacketsDelta = c.inPacketsDelta + srcPackets
+				c.outPacketsDelta = c.outPacketsDelta + dstPackets
+
+				c.in = in
+				c.out = out
+				c.inPackets = srcPackets
+				c.outPackets = dstPackets
+
+			} else if c.inPackets < srcPackets || c.outPackets < dstPackets {
+				// new packets have arrived update the connection deltas and last seen states
+				// log.Println("new packets update")
+				c.time = uint64(time.Now().Unix())
+
+				c.inDelta = c.inDelta + (in - c.in)
+				c.outDelta = c.outDelta + (out - c.out)
+				c.inPacketsDelta = c.inPacketsDelta + (srcPackets - c.inPackets)
+				c.outPacketsDelta = c.outPacketsDelta + (dstPackets - c.outPackets)
+
+				c.in = in
+				c.out = out
+				c.inPackets = srcPackets
+				c.outPackets = dstPackets
+			} else {
+				// log.Println("Update Time")
+				// We saw this connection refresh the last seen time
+				c.time = uint64(time.Now().Unix())
 			}
 		}
 	}
