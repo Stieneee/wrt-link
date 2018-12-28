@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-type ConntrackLog struct {
+type conntrackLog struct {
 	time            uint64
 	proto           string
 	src             string
@@ -26,7 +26,7 @@ type ConntrackLog struct {
 	outPacketsDelta uint32
 }
 
-var m = make(map[string]ConntrackLog)
+var m = make(map[string]conntrackLog)
 
 func reportConntract() []*Conntrack {
 	var connTrackResult []*Conntrack
@@ -157,7 +157,7 @@ func readConntrack(filename string) {
 			c, ok := m[hash]
 			if !ok {
 				// log.Println("track new")
-				m[hash] = ConntrackLog{
+				m[hash] = conntrackLog{
 					time:            uint64(time.Now().Unix()),
 					proto:           cType,
 					src:             src,
@@ -188,7 +188,7 @@ func readConntrack(filename string) {
 				c.out = out
 				c.inPackets = srcPackets
 				c.outPackets = dstPackets
-
+				m[hash] = c
 			} else if c.inPackets < srcPackets || c.outPackets < dstPackets {
 				// new packets have arrived update the connection deltas and last seen states
 				// log.Println("new packets update")
@@ -203,12 +203,15 @@ func readConntrack(filename string) {
 				c.out = out
 				c.inPackets = srcPackets
 				c.outPackets = dstPackets
+				m[hash] = c
 			} else {
 				// log.Println("Update Time")
 				// We saw this connection refresh the last seen time
 				c.time = uint64(time.Now().Unix())
+				m[hash] = c
 			}
 		}
+
 	}
 
 	file.Close()

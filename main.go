@@ -21,13 +21,13 @@ func main() {
 	if string(out) == "1" {
 		sfe = true
 	}
-	fmt.Printf("SFE is %d\n", sfe)
+	fmt.Printf("SFE is %t\n", sfe)
 
 	lanInterface, err := exec.Command("nvram", "get", "lan_ifname").Output()
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Lan Interface is %s\n", lanInterface)
+	fmt.Printf("Lan Interface is %q\n", lanInterface)
 
 	conn, err := grpc.Dial("192.168.0.141:50051", grpc.WithInsecure())
 	if err != nil {
@@ -43,6 +43,7 @@ func main() {
 	requestConntrackChan := make(chan bool, 2)
 
 	go readConntrackScheduler(conntrackResultChan, requestConntrackChan)
+
 	for range time.Tick(time.Minute) {
 		log.Println("Time to Report")
 
@@ -69,7 +70,7 @@ func main() {
 			Ct:   conntrackResult,
 		})
 		if err != nil {
-			log.Println("Error when calling ReportData: %s", err)
+			log.Println(err)
 		} else {
 			log.Printf("Response from server: %t", response.Success)
 		}
