@@ -1,43 +1,31 @@
 package main
 
 import (
-	"context"
+	"bytes"
+	"encoding/json"
 	"fmt"
-	"google.golang.org/grpc"
 	"log"
+	"net/http"
 	"os/exec"
 	"runtime"
+	"strings"
 	"time"
 )
+
+type DataReport struct {
+	Time uint64
+	Nf   []*Netfilter
+	Ct   []*Conntrack
+}
 
 var sfe bool
 var lanInterface string
 
 func main() {
-	out, err := exec.Command("nvram", "get", "sfe").Output()
-	if err != nil {
-		log.Fatal(err)
-	}
-	if string(out) == "1" {
-		sfe = true
-	}
-	fmt.Printf("SFE is %t\n", sfe)
-
-	lanInterface, err := exec.Command("nvram", "get", "lan_ifname").Output()
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("Lan Interface is %q\n", lanInterface)
-
-	conn, err := grpc.Dial("192.168.0.141:50051", grpc.WithInsecure())
-	if err != nil {
-		log.Fatalf("did not connect: %v", err)
-	}
-	defer conn.Close()
+	// collectRouterInfo()
 
 	log.Println("Setting up Ip tables")
 	setupIptable()
-	client := NewReporterClient(conn)
 
 	conntrackResultChan := make(chan []*Conntrack, 2)
 	requestConntrackChan := make(chan bool, 2)
@@ -61,19 +49,28 @@ func main() {
 		var conntrackResult = <-conntrackResultChan
 		log.Println("Report got conntrackResults")
 
-		// Send full report
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-		defer cancel()
-		response, err := client.ReportData(ctx, &DataReport{
+		message := &DataReport{
 			Time: uint64(time.Now().Unix()),
 			Nf:   iptableResult,
 			Ct:   conntrackResult,
-		})
-		if err != nil {
-			log.Println(err)
-		} else {
-			log.Printf("Response from server: %t", response.Success)
 		}
+
+		bytesRepresentation, err := json.Marshal(message)
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		resp, err := http.Post("http://192.168.0.142:5000/logmyio-203720/us-central1/wrtLink/report", "application/json", bytes.NewBuffer(bytesRepresentation))
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		var result map[string]interface{}
+
+		json.NewDecoder(resp.Body).Decode(&result)
+
+		log.Println(result)
+		log.Println(result["data"])
 	}
 }
 
@@ -86,6 +83,24 @@ func readConntrackScheduler(conntrackResultChan chan<- []*Conntrack, requestConn
 		}
 		readConntrack("/proc/net/ip_conntrack")
 	}
+}
+
+func collectRouterInfo() {
+	out, err := exec.Command("nvram", "get", "sfe").Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if out[0] == '1' {
+		sfe = true
+	}
+	fmt.Printf("SFE is %t\n", sfe)
+
+	lanInterface, err := exec.Command("nvram", "get", "lan_ifname").Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	lanInterface = []byte(strings.TrimSuffix(string(lanInterface), "\n"))
+	fmt.Printf("Lan Interface is %s\n", lanInterface)
 }
 
 func printMemUsage() {

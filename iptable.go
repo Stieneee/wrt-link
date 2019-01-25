@@ -11,6 +11,13 @@ import (
 // TODO investigate if we are making repeate entries in iptable
 // TODO what the behvaiour of iptables if there are multiple entries. first match? should we be adding? are later entries replacing already read values.
 
+type Netfilter struct {
+	Mac string
+	Ip  string
+	In  uint64
+	Out uint64
+}
+
 func setupIptable() {
 	// Create tables (it doesn't matter if it already exists).
 	err := exec.Command("iptables", "-N", "WRTLINK").Run()

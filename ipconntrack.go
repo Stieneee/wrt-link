@@ -9,6 +9,19 @@ import (
 	"time"
 )
 
+// Conntrack - delivery structure of conntrack based information
+type Conntrack struct {
+	Proto      string
+	Src        string
+	Dst        string
+	Srcp       uint32
+	Dstp       uint32
+	In         uint64
+	Out        uint64
+	InPackets  uint32
+	OutPackets uint32
+}
+
 type conntrackLog struct {
 	time            uint64
 	proto           string

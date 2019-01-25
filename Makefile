@@ -5,11 +5,10 @@ STRIP=$(TOOLCHAIN)/bin/mips-openwrt-linux-musl-strip
 
 LDFLAGS=-s -w -extldflags "-static"
 
-main: main.go wrt.proto
+main: main.go
 	# GOOS=linux GOARCH=mips GOARM=5 CC=$(CC) go build --ldflags='$(LDFLAGS)' -o main main.go
-	protoc --go_out=plugins=grpc:. wrt.proto
-	GOOS=linux GOARCH=mips GOMIPS=softfloat CC=$(CC) go build --ldflags='$(LDFLAGS)' main.go ipconntrack.go iptable.go wrt.pb.go
-	# $(STRIP) main
+	GOOS=linux GOARCH=mips GOMIPS=softfloat CC=$(CC) go build --ldflags='$(LDFLAGS)' main.go ipconntrack.go iptable.go
+	$(STRIP) main
 
 push:
 	scp main ddwrt:/tmp/main
