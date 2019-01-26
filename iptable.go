@@ -10,7 +10,7 @@ import (
 // TODO investigate if we are making repeate entries in iptable
 // TODO what the behvaiour of iptables if there are multiple entries. first match? should we be adding? are later entries replacing already read values.
 
-type Netfilter struct {
+type netfilter struct {
 	Mac string
 	Ip  string
 	In  uint64
@@ -65,9 +65,9 @@ func setupIptable() {
 	}
 }
 
-func readArp() map[string]Netfilter {
+func readArp() map[string]netfilter {
 
-	var arpData = make(map[string]Netfilter)
+	var arpData = make(map[string]netfilter)
 
 	out, err := exec.Command("grep", "-v", "\"0x0\"", "/proc/net/arp").Output()
 	if err != nil {
@@ -85,7 +85,7 @@ func readArp() map[string]Netfilter {
 			if len(feilds) >= 6 {
 				dev, ok := arpData[feilds[0]]
 				if !ok {
-					arpData[feilds[0]] = Netfilter{
+					arpData[feilds[0]] = netfilter{
 						Ip:  feilds[0],
 						Mac: feilds[3],
 						Out: 0,
@@ -106,7 +106,7 @@ func readArp() map[string]Netfilter {
 	return arpData
 }
 
-func readIptable() []*Netfilter {
+func readIptable() []*netfilter {
 	arpData := readArp()
 
 	out, err := exec.Command("iptables", "-L", "WRTLINK", "-vnxZ").Output()
@@ -149,7 +149,7 @@ func readIptable() []*Netfilter {
 	}
 
 	// Turn map into a array and return
-	var iptableResult []*Netfilter
+	var iptableResult []*netfilter
 	for _, value := range arpData {
 		log.Println("iptables result", value)
 		vCopy := value

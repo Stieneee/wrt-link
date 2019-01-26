@@ -2,13 +2,16 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
+	"strings"
 	"time"
+
+	"github.com/getsentry/raven-go"
 )
 
 type msgContainer struct {
@@ -18,10 +21,10 @@ type msgContainer struct {
 	json     []byte
 }
 
+// TODO investigate other properties
 var tr = &http.Transport{
 	MaxIdleConns:    10,
 	IdleConnTimeout: 30 * time.Second,
-	// DisableCompression: true,
 }
 
 var client = &http.Client{Transport: tr}
@@ -32,15 +35,17 @@ var sendChan = make(chan msgContainer, 10000)
 func fullURL(endPoint string) string {
 	u, err := url.Parse(os.Args[1])
 	if err != nil {
+		raven.CaptureError(err, ravenContext)
 		log.Println(err)
+		return ""
 	}
 	u.Path = path.Join(u.Path, endPoint)
 	s := u.String()
 	return s
 }
 
-// Queue the message to be sent by reporter
-func sendMessage(metheod string, auth bool, endPoint string, json []byte) {
+// Queue the report to be sent by reporter
+func sendReport(metheod string, auth bool, endPoint string, json []byte) {
 	msg := msgContainer{
 		metheod:  metheod,
 		auth:     auth,
@@ -52,6 +57,11 @@ func sendMessage(metheod string, auth bool, endPoint string, json []byte) {
 
 func attemptReport(msg msgContainer) bool {
 	req, err := http.NewRequest(msg.metheod, fullURL(msg.endPoint), bytes.NewBuffer(msg.json))
+	if err != nil {
+		raven.CaptureError(err, ravenContext)
+		log.Println(err)
+		return false
+	}
 	req.Header.Set("Content-Type", "application/json")
 	req.SetBasicAuth(os.Args[2], os.Args[3])
 	resp, err := client.Do(req)
@@ -60,14 +70,17 @@ func attemptReport(msg msgContainer) bool {
 		return false
 	}
 	if resp.StatusCode != 200 {
-		log.Printf("API returned status code %d \n", resp.StatusCode)
+		s := []string{"API returned status code", resp.Status, fullURL(msg.endPoint)}
+		err = errors.New(strings.Join(s, " "))
+		raven.CaptureError(err, ravenContext)
+		log.Println(err)
 		return false
 	}
-	// defer resp.Body.Close()
-	var result map[string]interface{}
+	defer resp.Body.Close()
+	// var result map[string]interface{}
 
-	json.NewDecoder(resp.Body).Decode(&result)
-	log.Println(result)
+	// json.NewDecoder(resp.Body).Decode(&result)
+	// log.Println(result)
 	return true
 }
 

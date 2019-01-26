@@ -4,14 +4,18 @@ import (
 	"encoding/json"
 	"log"
 	"os/exec"
-	"runtime"
 	"strings"
 	"time"
+
+	"github.com/getsentry/raven-go"
 )
 
-type DataReport struct {
+type routerInfoReport struct {
+}
+
+type dataReport struct {
 	Time uint64
-	Nf   []*Netfilter
+	Nf   []*netfilter
 	Ct   []*Conntrack
 }
 
@@ -19,12 +23,15 @@ var sfe bool
 var lanInterface string
 
 func main() {
+	ravenInit()
+
 	// TODO Do an args check
 	// os.Args[1] // Address
 	// os.Args[2] // UID
 	// os.Args[3] // Secret
 
-	// collectRouterInfo()
+	// testAuthCreds()
+	// collectStartupInfo()
 
 	log.Println("Setting up Ip tables")
 	setupIptable()
@@ -36,37 +43,15 @@ func main() {
 	go reporter()
 
 	for range time.Tick(time.Minute) {
-		log.Println("Time to generate report")
-
-		// Call the Conntrack thread to report current totals via channel.
-		requestConntrackChan <- true
-
-		// Iptables
-		var iptableResult = readIptable()
-		setupIptable()
-		// log.Println("Report got iptables")
-
-		// Grab results from other go routines
-		var conntrackResult = <-conntrackResultChan
-
-		// TODO Grad other stats
-
-		message := &DataReport{
-			Time: uint64(time.Now().Unix()),
-			Nf:   iptableResult,
-			Ct:   conntrackResult,
-		}
-
-		bytes, err := json.Marshal(message)
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		sendMessage("POST", true, "report", bytes)
+		collectReport(conntrackResultChan, requestConntrackChan)
 	}
 }
 
-func collectRouterInfo() {
+func testAuthCreds() {
+
+}
+
+func collectStartupInfo() {
 	out, err := exec.Command("nvram", "get", "sfe").Output()
 	if err != nil {
 		log.Fatal(err)
@@ -92,16 +77,33 @@ func collectRouterInfo() {
 	// }
 }
 
-func printMemUsage() {
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-	// For info on each, see: https://golang.org/pkg/runtime/#MemStats
-	log.Printf("Alloc = %v MiB", bToMb(m.Alloc))
-	log.Printf("\tTotalAlloc = %v MiB", bToMb(m.TotalAlloc))
-	log.Printf("\tSys = %v MiB", bToMb(m.Sys))
-	log.Printf("\tNumGC = %v\n", m.NumGC)
-}
+func collectReport(conntrackResultChan <-chan []*Conntrack, requestConntrackChan chan<- bool) {
+	log.Println("Time to generate report")
 
-func bToMb(b uint64) uint64 {
-	return b / 1024 / 1024
+	// Call the Conntrack thread to report current totals via channel.
+	requestConntrackChan <- true
+
+	// Iptables
+	var iptableResult = readIptable()
+	setupIptable()
+
+	// Grab results from other go routines
+	var conntrackResult = <-conntrackResultChan
+
+	//	TODO Grad other stats
+
+	// Create message
+	message := &dataReport{
+		Time: uint64(time.Now().Unix()),
+		Nf:   iptableResult,
+		Ct:   conntrackResult,
+	}
+	bytes, err := json.Marshal(message)
+	if err != nil {
+		raven.CaptureError(err, ravenContext)
+		log.Println(err)
+		return
+	}
+
+	sendReport("POST", true, "report", bytes)
 }

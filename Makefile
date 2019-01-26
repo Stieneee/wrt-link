@@ -5,9 +5,9 @@ STRIP=$(TOOLCHAIN)/bin/mips-openwrt-linux-musl-strip
 
 LDFLAGS=-s -w -extldflags "-static"
 
-main: main.go ipconntrack.go iptable.go reporter.go
+main: main.go ipconntrack.go iptable.go reporter.go raven.go
 	# GOOS=linux GOARCH=mips GOARM=5 CC=$(CC) go build --ldflags='$(LDFLAGS)' -o main main.go
-	GOOS=linux GOARCH=mips GOMIPS=softfloat C=$(CC) go build --ldflags='$(LDFLAGS)' main.go ipconntrack.go iptable.go reporter.go
+	GOOS=linux GOARCH=mips GOMIPS=softfloat C=$(CC) go build --ldflags='$(LDFLAGS)' main.go ipconntrack.go iptable.go reporter.go raven.go
 	$(STRIP) main
 
 push:
