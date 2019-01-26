@@ -41,6 +41,17 @@ type conntrackLog struct {
 
 var m = make(map[string]conntrackLog)
 
+func readConntrackScheduler(conntrackResultChan chan<- []*Conntrack, requestConntrackChan <-chan bool) {
+	for range time.Tick(time.Second) {
+		if len(requestConntrackChan) > 0 {
+			log.Println("Conntrack report requested")
+			_ = <-requestConntrackChan
+			conntrackResultChan <- reportConntract()
+		}
+		readConntrack("/proc/net/ip_conntrack")
+	}
+}
+
 func reportConntract() []*Conntrack {
 	var connTrackResult []*Conntrack
 	for _, value := range m {
@@ -66,7 +77,7 @@ func reportConntract() []*Conntrack {
 }
 
 func readConntrack(filename string) {
-	start := time.Now()
+	// start := time.Now()
 	file, err := os.Open(filename)
 	if err != nil {
 		log.Fatal(err)
@@ -80,7 +91,7 @@ func readConntrack(filename string) {
 		cType := text[0:3]
 
 		if cType == "tcp" || cType == "udp" {
-			// fmt.Println(scanner.Text())
+			// log.Println(scanner.Text())
 			src := ""
 			dst := ""
 			dportS := ""
@@ -164,7 +175,7 @@ func readConntrack(filename string) {
 			in, _ := strconv.ParseUint(bytes[0], 10, 64)
 			out, _ := strconv.ParseUint(bytes[1], 10, 64)
 
-			// fmt.Printf("%s %s %s %d %d %d %d %d %d \n", cType, src, dst, sport, dport, spackets, dpackets, sbytes, dbytes)
+			// log.Printf("%s %s %s %d %d %d %d %d %d \n", cType, src, dst, sport, dport, spackets, dpackets, sbytes, dbytes)
 
 			hash := src + dst + sportS + dportS
 			c, ok := m[hash]
@@ -186,7 +197,7 @@ func readConntrack(filename string) {
 					inPacketsDelta:  srcPackets,
 					outPacketsDelta: dstPackets,
 				}
-				// fmt.Println("new")
+				// log.Println("new")
 			} else if c.inPackets > srcPackets || c.outPackets > dstPackets {
 				// the connection seems to have less packets then previously seen the connection must have been reset
 				log.Println("connection restart overwrite")
@@ -231,7 +242,7 @@ func readConntrack(filename string) {
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
-	elapsed := time.Since(start)
-	log.Printf("Run took %s", elapsed)
+	// elapsed := time.Since(start)
+	// log.Printf("Run took %s", elapsed)
 	// PrintMemUsage()
 }

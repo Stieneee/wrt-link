@@ -61,7 +61,7 @@ func firstParse() {
 		cType := text[0:3]
 
 		if cType == "tcp" || cType == "udp" {
-			// fmt.Println(scanner.Text())
+			// log.Println(scanner.Text())
 			_ = regexp.MustCompile("src=[0-9\\.]+").FindString(text)[4:]
 			_ = regexp.MustCompile("dst=[0-9\\.]+").FindString(text)[4:]
 			_, _ = strconv.Atoi(strings.Replace(regexp.MustCompile("sport=[0-9\\.]+").FindString(text), "sport=", "", -1))
@@ -108,7 +108,7 @@ func TestFirstParse(t *testing.T) {
 // 		cType := text[0:3]
 
 // 		if cType == "tcp" || cType == "udp" {
-// 			// fmt.Println(scanner.Text())
+// 			// log.Println(scanner.Text())
 // 			_ = srcR.FindString(text)[4:]
 // 			_ = dstR.FindString(text)[4:]
 // 			_, _ = strconv.Atoi(strings.Replace(sportR.FindString(text), "sport=", "", -1))
@@ -155,7 +155,7 @@ func TestFirstParse(t *testing.T) {
 // 		cType := text[0:3]
 
 // 		if cType == "tcp" || cType == "udp" {
-// 			// fmt.Println(scanner.Text())
+// 			// log.Println(scanner.Text())
 // 			_ = srcR.FindString(text)[4:]
 // 			_ = dstR.FindString(text)[4:]
 // 			_, _ = strconv.Atoi(sportR.FindString(text)[6:])
@@ -195,7 +195,7 @@ func TestFirstParse(t *testing.T) {
 // 		cType := text[0:3]
 
 // 		if cType == "tcp" || cType == "udp" {
-// 			// fmt.Println(scanner.Text())
+// 			// log.Println(scanner.Text())
 // 			_ = srcR.FindString(text)[4:]
 // 			_ = dstR.FindString(text)[4:]
 // 			_, _ = strconv.Atoi(strings.Replace(sportR.FindString(text), "sport=", "", -1))
@@ -242,7 +242,7 @@ func TestFirstParse(t *testing.T) {
 // 		cType := text[0:3]
 
 // 		if cType == "tcp" || cType == "udp" {
-// 			// fmt.Println(scanner.Text())
+// 			// log.Println(scanner.Text())
 // 			_ = srcR.FindString(text)[4:]
 // 			_ = dstR.FindString(text)[4:]
 // 			_, _ = strconv.Atoi(sportR.FindString(text)[6:])

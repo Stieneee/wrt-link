@@ -1,11 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
-	"net/http"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -22,6 +19,11 @@ var sfe bool
 var lanInterface string
 
 func main() {
+	// TODO Do an args check
+	// os.Args[1] // Address
+	// os.Args[2] // UID
+	// os.Args[3] // Secret
+
 	// collectRouterInfo()
 
 	log.Println("Setting up Ip tables")
@@ -31,9 +33,10 @@ func main() {
 	requestConntrackChan := make(chan bool, 2)
 
 	go readConntrackScheduler(conntrackResultChan, requestConntrackChan)
+	go reporter()
 
 	for range time.Tick(time.Minute) {
-		log.Println("Time to Report")
+		log.Println("Time to generate report")
 
 		// Call the Conntrack thread to report current totals via channel.
 		requestConntrackChan <- true
@@ -41,13 +44,12 @@ func main() {
 		// Iptables
 		var iptableResult = readIptable()
 		setupIptable()
-		log.Println("Report got iptables")
-
-		// Grad other stats
+		// log.Println("Report got iptables")
 
 		// Grab results from other go routines
 		var conntrackResult = <-conntrackResultChan
-		log.Println("Report got conntrackResults")
+
+		// TODO Grad other stats
 
 		message := &DataReport{
 			Time: uint64(time.Now().Unix()),
@@ -55,33 +57,12 @@ func main() {
 			Ct:   conntrackResult,
 		}
 
-		bytesRepresentation, err := json.Marshal(message)
+		bytes, err := json.Marshal(message)
 		if err != nil {
 			log.Fatalln(err)
 		}
 
-		resp, err := http.Post("http://192.168.0.142:5000/logmyio-203720/us-central1/wrtLink/report", "application/json", bytes.NewBuffer(bytesRepresentation))
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		var result map[string]interface{}
-
-		json.NewDecoder(resp.Body).Decode(&result)
-
-		log.Println(result)
-		log.Println(result["data"])
-	}
-}
-
-func readConntrackScheduler(conntrackResultChan chan<- []*Conntrack, requestConntrackChan <-chan bool) {
-	for range time.Tick(time.Second) {
-		if len(requestConntrackChan) > 0 {
-			log.Println("Conntrack report requested")
-			_ = <-requestConntrackChan
-			conntrackResultChan <- reportConntract()
-		}
-		readConntrack("/proc/net/ip_conntrack")
+		sendMessage("POST", true, "report", bytes)
 	}
 }
 
@@ -93,24 +74,32 @@ func collectRouterInfo() {
 	if out[0] == '1' {
 		sfe = true
 	}
-	fmt.Printf("SFE is %t\n", sfe)
+	log.Printf("SFE is %t\n", sfe)
 
 	lanInterface, err := exec.Command("nvram", "get", "lan_ifname").Output()
 	if err != nil {
 		log.Fatal(err)
 	}
 	lanInterface = []byte(strings.TrimSuffix(string(lanInterface), "\n"))
-	fmt.Printf("Lan Interface is %s\n", lanInterface)
+	log.Printf("Lan Interface is %s\n", lanInterface)
+
+	// message := map[string]interface{}{
+	// 	"hello": "world",
+	// 	"life":  42,
+	// 	"embedded": map[string]string{
+	// 		"yes": "of course!",
+	// 	},
+	// }
 }
 
 func printMemUsage() {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 	// For info on each, see: https://golang.org/pkg/runtime/#MemStats
-	fmt.Printf("Alloc = %v MiB", bToMb(m.Alloc))
-	fmt.Printf("\tTotalAlloc = %v MiB", bToMb(m.TotalAlloc))
-	fmt.Printf("\tSys = %v MiB", bToMb(m.Sys))
-	fmt.Printf("\tNumGC = %v\n", m.NumGC)
+	log.Printf("Alloc = %v MiB", bToMb(m.Alloc))
+	log.Printf("\tTotalAlloc = %v MiB", bToMb(m.TotalAlloc))
+	log.Printf("\tSys = %v MiB", bToMb(m.Sys))
+	log.Printf("\tNumGC = %v\n", m.NumGC)
 }
 
 func bToMb(b uint64) uint64 {

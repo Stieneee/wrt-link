@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os/exec"
 	"strconv"
@@ -81,10 +80,8 @@ func readArp() map[string]Netfilter {
 			if line[0] == 'I' {
 				continue
 			}
-			feilds := strings.Split(line, " ")
-			// for _, feild := range feilds {
-			// 	// fmt.Println(feild)
-			// }
+			feilds := strings.Fields(line)
+			log.Println(feilds)
 			if len(feilds) >= 6 {
 				dev, ok := arpData[feilds[0]]
 				if !ok {
@@ -104,6 +101,8 @@ func readArp() map[string]Netfilter {
 		}
 	}
 
+	log.Println(arpData)
+
 	return arpData
 }
 
@@ -119,7 +118,7 @@ func readIptable() []*Netfilter {
 	for _, line := range iptableLines {
 		fields := strings.Fields(line)
 		if len(fields) == 9 && fields[0] != "pkts" {
-			// fmt.Println(fields)
+			// log.Println(fields)
 			if fields[0] != "0" && fields[1] != "0" {
 				if fields[7] == "0.0.0.0/0" {
 					// Download
@@ -143,7 +142,7 @@ func readIptable() []*Netfilter {
 						arpData[fields[7]] = dev
 					}
 				} else {
-					fmt.Println("iptable line missing 0.0.0.0/0")
+					log.Println("iptable line missing 0.0.0.0/0")
 				}
 			}
 		}
@@ -152,7 +151,7 @@ func readIptable() []*Netfilter {
 	// Turn map into a array and return
 	var iptableResult []*Netfilter
 	for _, value := range arpData {
-		fmt.Println("iptables result", value)
+		log.Println("iptables result", value)
 		vCopy := value
 		iptableResult = append(iptableResult, &vCopy)
 	}
