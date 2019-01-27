@@ -2,7 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
+	"net/http"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -30,7 +33,7 @@ func main() {
 	// os.Args[2] // UID
 	// os.Args[3] // Secret
 
-	// testAuthCreds()
+	testAuthCreds()
 	// collectStartupInfo()
 
 	log.Println("Setting up Ip tables")
@@ -47,8 +50,38 @@ func main() {
 	}
 }
 
+// testAuthCreds - Test credientals before starting. ~10 mins to pass test before exit
 func testAuthCreds() {
+	for i := 0; i < 20; i++ {
+		req, err := http.NewRequest("GET", fullURL("authCheck"), nil)
+		if err != nil {
+			// raven.CaptureError(err, ravenContext)
+			log.Println(err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req.SetBasicAuth(os.Args[2], os.Args[3])
+		resp, err := client.Do(req)
+		if err != nil {
+			// raven.CaptureError(err, ravenContext)
+			log.Println(err)
+		}
+		if resp.StatusCode != 200 {
+			s := []string{"API returned status code", resp.Status, fullURL("authCheck")}
+			err = errors.New(strings.Join(s, " "))
+			// raven.CaptureError(err, ravenContext)
+			log.Println(err)
+		}
+		if resp.StatusCode == 200 {
+			log.Println("Auth OK! Starting Logging.")
+			return
+		}
 
+		defer resp.Body.Close()
+		time.Sleep(30 * time.Second)
+	}
+
+	raven.CaptureMessageAndWait("Failed AuthCheck", ravenContext)
+	log.Fatalln("Failed AuithCheck")
 }
 
 func collectStartupInfo() {
@@ -68,13 +101,18 @@ func collectStartupInfo() {
 	lanInterface = []byte(strings.TrimSuffix(string(lanInterface), "\n"))
 	log.Printf("Lan Interface is %s\n", lanInterface)
 
-	// message := map[string]interface{}{
-	// 	"hello": "world",
-	// 	"life":  42,
-	// 	"embedded": map[string]string{
-	// 		"yes": "of course!",
-	// 	},
-	// }
+	message := map[string]interface{}{
+		"sfe":          sfe,
+		"lanInterface": lanInterface,
+	}
+	bytes, err := json.Marshal(message)
+	if err != nil {
+		raven.CaptureError(err, ravenContext)
+		log.Println(err)
+		return
+	}
+
+	sendReport("POST", true, "startup", bytes)
 }
 
 func collectReport(conntrackResultChan <-chan []*Conntrack, requestConntrackChan chan<- bool) {
