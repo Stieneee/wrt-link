@@ -1,8 +1,10 @@
 package main
 
 import (
+	"crypto/rsa"
 	"encoding/json"
 	"errors"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -10,8 +12,13 @@ import (
 	"strings"
 	"time"
 
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/getsentry/raven-go"
 )
+
+// os.Args[1] // API Address
+// os.Args[2] // UID
+// os.Args[3] // 256 byte RSA Private key path
 
 type routerInfoReport struct {
 }
@@ -22,18 +29,27 @@ type dataReport struct {
 	Ct   []*Conntrack
 }
 
+var signKey *rsa.PrivateKey
+
 var sfe bool
 var lanInterface string
 
 func main() {
 	ravenInit()
 
-	// TODO Do an args check
-	// os.Args[1] // Address
-	// os.Args[2] // UID
-	// os.Args[3] // Secret
+	signBytes, err := ioutil.ReadFile(os.Args[3])
+	if err != nil {
+		raven.CaptureErrorAndWait(err, ravenContext)
+		log.Panicln(err)
+	}
+	signKey, err = jwt.ParseRSAPrivateKeyFromPEM(signBytes)
+	if err != nil {
+		raven.CaptureErrorAndWait(err, ravenContext)
+		log.Panicln(err)
+	}
 
 	testAuthCreds()
+
 	// collectStartupInfo()
 
 	log.Println("Setting up Ip tables")
@@ -59,7 +75,7 @@ func testAuthCreds() {
 			log.Println(err)
 		}
 		req.Header.Set("Content-Type", "application/json")
-		req.SetBasicAuth(os.Args[2], os.Args[3])
+		req.Header.Add("Authorization", "Bearer "+createToken())
 		resp, err := client.Do(req)
 		if err != nil {
 			// raven.CaptureError(err, ravenContext)
