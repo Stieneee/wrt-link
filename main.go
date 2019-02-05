@@ -24,9 +24,9 @@ type routerInfoReport struct {
 }
 
 type dataReport struct {
-	Time uint64
-	Nf   []*netfilter
-	Ct   []*Conntrack
+	t  uint64
+	nf []netfilter
+	ct []conntrack
 }
 
 var signKey *rsa.PrivateKey
@@ -50,12 +50,12 @@ func main() {
 
 	testAuthCreds()
 
-	// collectStartupInfo()
+	collectStartupInfo()
 
 	log.Println("Setting up Ip tables")
 	setupIptable()
 
-	conntrackResultChan := make(chan []*Conntrack, 2)
+	conntrackResultChan := make(chan []conntrack, 2)
 	requestConntrackChan := make(chan bool, 2)
 
 	go readConntrackScheduler(conntrackResultChan, requestConntrackChan)
@@ -131,27 +131,28 @@ func collectStartupInfo() {
 	sendReport("POST", true, "startup", bytes)
 }
 
-func collectReport(conntrackResultChan <-chan []*Conntrack, requestConntrackChan chan<- bool) {
+func collectReport(conntrackResultChan <-chan []conntrack, requestConntrackChan chan<- bool) {
 	log.Println("Time to generate report")
 
 	// Call the Conntrack thread to report current totals via channel.
 	requestConntrackChan <- true
+	var conntrackResult = <-conntrackResultChan
 
 	// Iptables
-	var iptableResult = readIptable()
+	var iptableResult = readIptable(conntrackResult)
 	setupIptable()
 
 	// Grab results from other go routines
-	var conntrackResult = <-conntrackResultChan
 
 	//	TODO Grad other stats
 
 	// Create message
-	message := &dataReport{
-		Time: uint64(time.Now().Unix()),
-		Nf:   iptableResult,
-		Ct:   conntrackResult,
+	message := dataReport{
+		t:  uint64(time.Now().Unix()),
+		nf: iptableResult,
+		ct: conntrackResult,
 	}
+	log.Println(message)
 	bytes, err := json.Marshal(message)
 	if err != nil {
 		raven.CaptureError(err, ravenContext)

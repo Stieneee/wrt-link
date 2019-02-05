@@ -63,7 +63,7 @@ func attemptReport(msg msgContainer) bool {
 		return false
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.SetBasicAuth(os.Args[2], os.Args[3])
+	req.Header.Add("Authorization", "Bearer "+createToken())
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Println(err)

@@ -1,14 +1,46 @@
 # wrt-link
 
-wrt-link is a shell script for collecting statistcs and per device bandwidth monitoring with DD-WRT routers.
-The script reports information from a number of sources including the nvram, iptables and conntrack via scp.
+wrt-link is a Go application for collection bandwidth, conneciton and device stats from DD-WRT routers.
+Orignally built to report to logmy.io the application reports perodically via an HTTP and could report to independantly hosted endpoints.
+
+## Features
+
+- [ ] Bandwidth Logging
+- [ ]   iptables (wrtbwmon)
+- [ ]   ipconntrack scrapping for bandwidth
+- [ ] Device connection reporting scrapping ip conntack
+- [ ]   Configurable private devices
+- [ ]   Black list checking
+- [ ] Router Stats
+- [ ]   Device type, CPU type
+- [ ]   DD-wrt version, kernel version
+- [ ]   CPU
+- [ ]   Memory
+- [ ]   Space, NVRAM, CIFS, JFFS2
+- [ ]   Active IP Connections
+- [ ]   Wireless Settings
+- [ ]   Wireless Clients
+- [ ]   Nearby Wireless Devices
+- [ ] ISP Stats
+- [ ]   Ping
+- [ ]   Speedtest
+- [ ]   DNS response time
+
+
+- [ ] Simple Endpoint Example - (Probably Nodejs and Mongodb in a Docker)
 
 ## Prerequisites
 
 A DD-WRT router with ssh access enabled.
-A seperate ssh server.
+A reporting endpoint or an account with logmy.io.
+A 256 Byte RSA private key.
 
-In the event this script is being used in combination with logmy.io please follow the installation steps provided by that service.
+In the event this is being used in combination with logmy.io please follow the installation steps provided by that service.
+There is no need to read any of the inforamtion here.
+
+## Compiling
+
+// TODO
 
 ## Installing
 
@@ -20,64 +52,13 @@ For testing purposes the script can be deployed on the router manually.
 SSH into your router and run the following commands.
 Generating a new rsa key and user accout on the remote server to be used by the script is advised.
 
-```
-echo {{SSH ADDRESS}} {{REMOTE SERVER PUBLIC HOSTKEY}} > /tmp/root/.ssh/known_hosts
-cat > /tmp/wrt-link.id_rsa <<- EOM
-{{PRIVATE KEY}}
-EOM
-wget http://github.com/Stieneee/wrt-link/releases/download/latest/wrt-link.sh -O /tmp/wrt-link.sh
-/tmp/wrt-link.sh {ROUTER ID} {SERVER ADDRESS} {SERVER PORT}
-```
+//TODO
 
 Alternatively scp could be used to retrieve the file securely from the ssh server.
 
-### Handling Report File
+### Configure
 
-The report file contains information in rows with several unique formats.
-Each format has a two character identifier at the beginning of the line.
-
-#### Version Information
-
-Version information is reported in the frist report after the device restarts.
-
-```
-wl {WRT-LINK Version}
-dv {DD-WRT Version}
-se {SFE Enabled}
-```
-
-#### Ping Report
-
-The result of a running ping command is concatinated and included with each report.
-The results can be parsed to determine packet loss and average ping statistics.
-
-```
-pt {Time (ms)} 
-pu # An unreachable host reponse.
-po # A timeout response.
-```
-
-#### Iptables Report
-
-MAC, IPs and iptables counters are reported.
-One line is present for each client of the devices regardless of whether or not the counters are non-zero.
-
-```
-nf {MAC} {IP} {Download} ${Upload}
-```
-
-#### Conntrack
-
-A row for each row from /proc/net/ip_conntrack.
-These rows have been condensed to save required bandwidth.
-
-```
-ct {Protocol} {Source IP} {Destination IP} {Source Port} {Destination Port} {Download Bytes} {Upload Bytes}
-```
-
-### Calculating Usage Data
-Byte counters on the router are reset during each cycle for iptables but not for conntrack.
-To properly account bandwidth information for each device differences must be calculated for the conntrack byte counters between each report.
+### Sentry Error Reporting
 
 ## Contributing
 Issues and pull requests are welcome.

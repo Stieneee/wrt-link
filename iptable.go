@@ -11,10 +11,10 @@ import (
 // TODO what the behvaiour of iptables if there are multiple entries. first match? should we be adding? are later entries replacing already read values.
 
 type netfilter struct {
-	Mac string
-	Ip  string
-	In  uint64
-	Out uint64
+	mac string
+	ip  string
+	in  uint64
+	out uint64
 }
 
 func setupIptable() {
@@ -86,16 +86,16 @@ func readArp() map[string]netfilter {
 				dev, ok := arpData[feilds[0]]
 				if !ok {
 					arpData[feilds[0]] = netfilter{
-						Ip:  feilds[0],
-						Mac: feilds[3],
-						Out: 0,
-						In:  0,
+						ip:  feilds[0],
+						mac: feilds[3],
+						out: 0,
+						in:  0,
 					}
 				} else {
-					dev.Ip = feilds[0]
-					dev.Mac = feilds[3]
-					dev.Out = 0
-					dev.In = 0
+					dev.ip = feilds[0]
+					dev.mac = feilds[3]
+					dev.out = 0
+					dev.in = 0
 				}
 			}
 		}
@@ -106,7 +106,7 @@ func readArp() map[string]netfilter {
 	return arpData
 }
 
-func readIptable() []*netfilter {
+func readIptable(conntrackResult []conntrack) []netfilter {
 	arpData := readArp()
 
 	out, err := exec.Command("iptables", "-L", "WRTLINK", "-vnxZ").Output()
@@ -127,7 +127,7 @@ func readIptable() []*netfilter {
 						log.Println("Error looking up device 7")
 					} else {
 						tmp, _ := strconv.ParseUint(fields[1], 10, 32)
-						dev.In = dev.In + tmp
+						dev.in = dev.in + tmp
 						arpData[fields[8]] = dev
 					}
 
@@ -138,7 +138,7 @@ func readIptable() []*netfilter {
 						log.Println("Error looking up device 8")
 					} else {
 						tmp, _ := strconv.ParseUint(fields[1], 10, 32)
-						dev.Out = dev.Out + tmp
+						dev.out = dev.out + tmp
 						arpData[fields[7]] = dev
 					}
 				} else {
@@ -148,12 +148,32 @@ func readIptable() []*netfilter {
 		}
 	}
 
+	if sfe {
+		for _, cr := range conntrackResult {
+			dev, ok := arpData[cr.src]
+			if !ok {
+				dev, ok := arpData[cr.dst]
+				if !ok {
+					// log.Println("No match conntrack result in arp data", dev)
+				} else {
+					dev.in += cr.out
+					dev.out += cr.in
+					arpData[cr.dst] = dev
+				}
+			} else {
+				dev.in += cr.in
+				dev.out += cr.out
+				arpData[cr.src] = dev
+			}
+		}
+	}
+
 	// Turn map into a array and return
-	var iptableResult []*netfilter
+	var iptableResult []netfilter
 	for _, value := range arpData {
 		log.Println("iptables result", value)
 		vCopy := value
-		iptableResult = append(iptableResult, &vCopy)
+		iptableResult = append(iptableResult, vCopy)
 	}
 
 	return iptableResult

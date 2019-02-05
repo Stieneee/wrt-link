@@ -10,16 +10,16 @@ import (
 )
 
 // Conntrack - delivery structure of conntrack based information
-type Conntrack struct {
-	Proto      string
-	Src        string
-	Dst        string
-	Srcp       uint32
-	Dstp       uint32
-	In         uint64
-	Out        uint64
-	InPackets  uint32
-	OutPackets uint32
+type conntrack struct {
+	proto      string
+	src        string
+	dst        string
+	srcp       uint32
+	dstp       uint32
+	in         uint64
+	out        uint64
+	inPackets  uint32
+	outPackets uint32
 }
 
 type conntrackLog struct {
@@ -41,7 +41,7 @@ type conntrackLog struct {
 
 var m = make(map[string]conntrackLog)
 
-func readConntrackScheduler(conntrackResultChan chan<- []*Conntrack, requestConntrackChan <-chan bool) {
+func readConntrackScheduler(conntrackResultChan chan<- []conntrack, requestConntrackChan <-chan bool) {
 	for range time.Tick(time.Second) {
 		if len(requestConntrackChan) > 0 {
 			log.Println("Conntrack report requested")
@@ -52,19 +52,19 @@ func readConntrackScheduler(conntrackResultChan chan<- []*Conntrack, requestConn
 	}
 }
 
-func reportConntract() []*Conntrack {
-	var connTrackResult []*Conntrack
+func reportConntract() []conntrack {
+	var connTrackResult []conntrack
 	for _, value := range m {
-		connTrackResult = append(connTrackResult, &Conntrack{
-			Proto:      value.proto,
-			Src:        value.src,
-			Dst:        value.dst,
-			Srcp:       value.srcp,
-			Dstp:       value.dstp,
-			In:         value.inDelta,
-			Out:        value.outDelta,
-			InPackets:  value.inPacketsDelta,
-			OutPackets: value.outPacketsDelta,
+		connTrackResult = append(connTrackResult, conntrack{
+			proto:      value.proto,
+			src:        value.src,
+			dst:        value.dst,
+			srcp:       value.srcp,
+			dstp:       value.dstp,
+			in:         value.inDelta,
+			out:        value.outDelta,
+			inPackets:  value.inPacketsDelta,
+			outPackets: value.outPacketsDelta,
 		})
 
 		value.inDelta = 0

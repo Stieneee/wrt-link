@@ -14,4 +14,4 @@ push:
 	scp main ddwrt:/tmp/main
 
 clean:
-	rm -f main wrt.pb.go
+	rm -f main

@@ -14,7 +14,7 @@ func createToken() string {
 	t := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
 		"router": os.Args[2],
 		"exp":    time.Now().Add(time.Minute * 1).Unix(),
-		"time":   time.Now().Unix(),
+		"nbf":    time.Now().Unix(),
 	})
 
 	tokenString, err := t.SignedString(signKey)
