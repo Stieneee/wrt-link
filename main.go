@@ -24,9 +24,9 @@ type routerInfoReport struct {
 }
 
 type dataReport struct {
-	t  uint64
-	nf []netfilter
-	ct []conntrack
+	T  uint64
+	Nf []Netfilter
+	Ct []Conntrack
 }
 
 var signKey *rsa.PrivateKey
@@ -55,7 +55,7 @@ func main() {
 	log.Println("Setting up Ip tables")
 	setupIptable()
 
-	conntrackResultChan := make(chan []conntrack, 2)
+	conntrackResultChan := make(chan []Conntrack, 2)
 	requestConntrackChan := make(chan bool, 2)
 
 	go readConntrackScheduler(conntrackResultChan, requestConntrackChan)
@@ -80,6 +80,8 @@ func testAuthCreds() {
 		if err != nil {
 			// raven.CaptureError(err, ravenContext)
 			log.Println(err)
+			time.Sleep(30 * time.Second)
+			continue
 		}
 		if resp.StatusCode != 200 {
 			s := []string{"API returned status code", resp.Status, fullURL("authCheck")}
@@ -131,7 +133,7 @@ func collectStartupInfo() {
 	sendReport("POST", true, "startup", bytes)
 }
 
-func collectReport(conntrackResultChan <-chan []conntrack, requestConntrackChan chan<- bool) {
+func collectReport(conntrackResultChan <-chan []Conntrack, requestConntrackChan chan<- bool) {
 	log.Println("Time to generate report")
 
 	// Call the Conntrack thread to report current totals via channel.
@@ -148,11 +150,11 @@ func collectReport(conntrackResultChan <-chan []conntrack, requestConntrackChan 
 
 	// Create message
 	message := dataReport{
-		t:  uint64(time.Now().Unix()),
-		nf: iptableResult,
-		ct: conntrackResult,
+		T:  uint64(time.Now().Unix()),
+		Nf: iptableResult,
+		Ct: conntrackResult,
 	}
-	log.Println(message)
+
 	bytes, err := json.Marshal(message)
 	if err != nil {
 		raven.CaptureError(err, ravenContext)
