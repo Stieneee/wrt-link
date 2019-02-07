@@ -10,6 +10,7 @@ import (
 // TODO investigate if we are making repeate entries in iptable
 // TODO what the behvaiour of iptables if there are multiple entries. first match? should we be adding? are later entries replacing already read values.
 
+// Netfilter - hold device ip mac and bandwidth
 type Netfilter struct {
 	Mac string
 	IP  string
@@ -22,19 +23,22 @@ func setupIptable() {
 	err := exec.Command("iptables", "-N", "WRTLINK").Run()
 	if err != nil {
 		// Add the WRTLINK CHAIN to the FORWARD chain (if non existing).
-		err = exec.Command("sh", "-c", "'iptables -L FORWARD --line-numbers -n | grep \"WRTLINK\" | grep \"1\"'").Run()
+		err = exec.Command("/bin/sh", "-c", "iptables -L FORWARD --line-numbers -n | grep WRTLINK | grep 1").Run()
 		if err != nil {
 			// if that command errors the chain is not where is should be
+			log.Println(err)
 			log.Println("iptables chain out of place")
 
-			err = exec.Command("sh", "-c", "'iptables -L FORWARD -n | grep \"WRTLINK\"'").Run()
+			err = exec.Command("/bin/sh", "-c", "iptables -L FORWARD -n | grep WRTLINK").Run()
 			if err == nil {
 				// the chain exsists but is in the wrong spot
-				log.Println("iptables chain misplaced, recreating it...")
+				log.Println("iptables chain misplaced, deleting it...")
 				// delete the chain
-				err = exec.Command("sh", "-c", "'iptables -D FORWARD -j WRTLINK'").Run()
+				//TODO This only deletes one
+				err = exec.Command("iptables", "-D", "FORWARD", "-j", "WRTLINK").Run()
 			}
-			_ = exec.Command("sh", "-c", "'iptables -I FORWARD -j WRTLINK'").Run()
+			log.Println("creating iptables chain")
+			_ = exec.Command("iptables", "-I", "FORWARD", "-j", "WRTLINK").Run()
 		}
 
 		out, err := exec.Command("grep", lanInterface, "/proc/net/arp").Output()
@@ -81,7 +85,6 @@ func readArp() map[string]Netfilter {
 				continue
 			}
 			feilds := strings.Fields(line)
-			log.Println(feilds)
 			if len(feilds) >= 6 {
 				dev, ok := arpData[feilds[0]]
 				if !ok {
@@ -100,9 +103,6 @@ func readArp() map[string]Netfilter {
 			}
 		}
 	}
-
-	log.Println(arpData)
-
 	return arpData
 }
 
@@ -118,7 +118,6 @@ func readIptable(conntrackResult []Conntrack) []Netfilter {
 	for _, line := range iptableLines {
 		fields := strings.Fields(line)
 		if len(fields) == 9 && fields[0] != "pkts" {
-			// log.Println(fields)
 			if fields[0] != "0" && fields[1] != "0" {
 				if fields[7] == "0.0.0.0/0" {
 					// Download
@@ -171,7 +170,6 @@ func readIptable(conntrackResult []Conntrack) []Netfilter {
 	// Turn map into a array and return
 	var iptableResult []Netfilter
 	for _, value := range arpData {
-		log.Println("iptables result", value)
 		vCopy := value
 		iptableResult = append(iptableResult, vCopy)
 	}

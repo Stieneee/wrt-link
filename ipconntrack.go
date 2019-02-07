@@ -44,7 +44,6 @@ var m = make(map[string]conntrackLog)
 func readConntrackScheduler(conntrackResultChan chan<- []Conntrack, requestConntrackChan <-chan bool) {
 	for range time.Tick(time.Second) {
 		if len(requestConntrackChan) > 0 {
-			log.Println("Conntrack report requested")
 			_ = <-requestConntrackChan
 			conntrackResultChan <- reportConntract()
 		}
@@ -91,7 +90,6 @@ func readConntrack(filename string) {
 		cType := text[0:3]
 
 		if cType == "tcp" || cType == "udp" {
-			// log.Println(scanner.Text())
 			src := ""
 			dst := ""
 			dportS := ""
@@ -175,12 +173,9 @@ func readConntrack(filename string) {
 			out, _ := strconv.ParseUint(bytes[0], 10, 64) //first src is used, first bytes src -> dst is out
 			in, _ := strconv.ParseUint(bytes[1], 10, 64)
 
-			// log.Printf("%s %s %s %d %d %d %d %d %d \n", cType, src, dst, sport, dport, spackets, dpackets, sbytes, dbytes)
-
 			hash := src + dst + sportS + dportS
 			c, ok := m[hash]
 			if !ok {
-				// log.Println("track new")
 				m[hash] = conntrackLog{
 					time:            uint64(time.Now().Unix()),
 					proto:           cType,
@@ -197,7 +192,6 @@ func readConntrack(filename string) {
 					inPacketsDelta:  srcPackets,
 					outPacketsDelta: dstPackets,
 				}
-				// log.Println("new")
 			} else if c.inPackets > srcPackets || c.outPackets > dstPackets {
 				// the connection seems to have less packets then previously seen the connection must have been reset
 				log.Println("connection restart overwrite")
@@ -215,7 +209,6 @@ func readConntrack(filename string) {
 				m[hash] = c
 			} else if c.inPackets < srcPackets || c.outPackets < dstPackets {
 				// new packets have arrived update the connection deltas and last seen states
-				// log.Println("new packets update")
 				c.time = uint64(time.Now().Unix())
 
 				c.inDelta = c.inDelta + (in - c.in)
@@ -229,7 +222,6 @@ func readConntrack(filename string) {
 				c.outPackets = dstPackets
 				m[hash] = c
 			} else {
-				// log.Println("Update Time")
 				// We saw this connection refresh the last seen time
 				c.time = uint64(time.Now().Unix())
 				m[hash] = c

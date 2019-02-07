@@ -134,7 +134,7 @@ func collectStartupInfo() {
 }
 
 func collectReport(conntrackResultChan <-chan []Conntrack, requestConntrackChan chan<- bool) {
-	log.Println("Time to generate report")
+	log.Println("generate report")
 
 	// Call the Conntrack thread to report current totals via channel.
 	requestConntrackChan <- true
