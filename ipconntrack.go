@@ -53,23 +53,28 @@ func readConntrackScheduler(conntrackResultChan chan<- []Conntrack, requestConnt
 
 func reportConntract() []Conntrack {
 	var connTrackResult []Conntrack
-	for _, value := range m {
-		connTrackResult = append(connTrackResult, Conntrack{
-			Proto:      value.proto,
-			Src:        value.src,
-			Dst:        value.dst,
-			Srcp:       value.srcp,
-			Dstp:       value.dstp,
-			In:         value.inDelta,
-			Out:        value.outDelta,
-			InPackets:  value.inPacketsDelta,
-			OutPackets: value.outPacketsDelta,
-		})
+	expireTime := (uint64)(time.Now().Unix() - 5)
+	for key, value := range m {
+		if value.time < expireTime {
+			delete(m, key)
+		} else {
+			connTrackResult = append(connTrackResult, Conntrack{
+				Proto:      value.proto,
+				Src:        value.src,
+				Dst:        value.dst,
+				Srcp:       value.srcp,
+				Dstp:       value.dstp,
+				In:         value.inDelta,
+				Out:        value.outDelta,
+				InPackets:  value.inPacketsDelta,
+				OutPackets: value.outPacketsDelta,
+			})
 
-		value.inDelta = 0
-		value.outDelta = 0
-		value.inPacketsDelta = 0
-		value.outPacketsDelta = 0
+			value.inDelta = 0
+			value.outDelta = 0
+			value.inPacketsDelta = 0
+			value.outPacketsDelta = 0
+		}
 	}
 
 	return connTrackResult
@@ -227,7 +232,6 @@ func readConntrack(filename string) {
 				m[hash] = c
 			}
 		}
-
 	}
 
 	file.Close()
