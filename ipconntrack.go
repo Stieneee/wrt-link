@@ -74,6 +74,8 @@ func reportConntract() []Conntrack {
 			value.outDelta = 0
 			value.inPacketsDelta = 0
 			value.outPacketsDelta = 0
+
+			m[key] = value
 		}
 	}
 
