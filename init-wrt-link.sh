@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
-echo 'init-wrt-link.sh version 0.2.0' >> /tmp/wrt-link.log
+echo 'init-wrt-link.sh version 0.2.1' >> /tmp/wrt-link.log
 
 cpuinfo=$(cat /proc/cpuinfo)
 
