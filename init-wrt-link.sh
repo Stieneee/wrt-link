@@ -2,9 +2,8 @@
 
 echo 'init-wrt-link.sh version 0.2.2' >> /tmp/wrt-link.log
 
-cpuinfo=$(cat /proc/cpuinfo)
-
-if [[ $cpuinfo == *"mips"* ]]; then
+# ash supported substring search using grep
+if [ cat /proc/cpuinfo | grep mips - > /dev/null ]; then
   echo 'MIPS CPU Detected' >> /tmp/wrt-link.log
   until scp -P 222 public@get.logmy.io:latest/wrt-link-mips /tmp/wrt-link; do 
     echo "Failed to download wrt-link-mips. trying again in 5 second" >> wrt-link.log
