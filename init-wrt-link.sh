@@ -1,6 +1,6 @@
 #!/bin/sh
 
-echo 'init-wrt-link.sh version 0.2.2' >> /tmp/wrt-link.log
+echo 'init-wrt-link.sh version 0.2.3' >> /tmp/wrt-link.log
 
 # ash supported substring search using grep
 if cat /proc/cpuinfo | grep mips - > /dev/null; then
