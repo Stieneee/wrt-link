@@ -1,10 +1,11 @@
 TOOLCHAIN=/usr/local/ddwrt/toolchain-mips_mips32_gcc-8.2.0_musl
 
-LDFLAGS=-s -w -extldflags "-static"
+LDFLAGS=-extldflags "-static"
 
 wrt-link-mips: main.go ipconntrack.go iptable.go reporter.go raven.go jwt.go
 	GOOS=linux GOARCH=mips GOMIPS=softfloat C=$(TOOLCHAIN)/bin/mips-openwrt-linux-gcc go build -o $@ --ldflags='$(LDFLAGS)' main.go ipconntrack.go iptable.go reporter.go raven.go jwt.go
-	$(TOOLCHAIN)/bin/mips-openwrt-linux-musl-strip $@ 
+	$(TOOLCHAIN)/bin/mips-openwrt-linux-musl-strip $@
+	upx --best --ultra-brute $@
 
 get-toolchain:
 	mkdir -p /usr/local/ddwrt/
@@ -17,4 +18,4 @@ push:
 	scp wrt-link-mips ddwrt:/tmp/wrt-link
 
 clean:
-	rm -f main
+	rm -f wrt-link-*

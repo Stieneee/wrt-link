@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"log"
 	"net/http"
@@ -11,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/certifi/gocertifi"
 	"github.com/getsentry/raven-go"
 )
 
@@ -22,14 +25,43 @@ type msgContainer struct {
 }
 
 // TODO investigate other properties
-var tr = &http.Transport{
-	MaxIdleConns:    10,
-	IdleConnTimeout: 30 * time.Second,
-}
+var tr = &http.Transport{}
 
 var client = &http.Client{Transport: tr}
 
 var sendChan = make(chan msgContainer, 10000)
+
+func setupHTTPClient() {
+	rootCAs, _ := x509.SystemCertPool()
+	if rootCAs == nil {
+		rootCAs = x509.NewCertPool()
+	}
+
+	rootCAs, err := gocertifi.CACerts()
+	if err != nil {
+		log.Println("failed to load root TLS certificates:", err)
+	} else {
+		client = &http.Client{
+			Transport: &http.Transport{
+				Proxy:           http.ProxyFromEnvironment,
+				TLSClientConfig: &tls.Config{RootCAs: rootCAs},
+			},
+		}
+	}
+
+	// Trust the augmented cert pool in our client
+	config := &tls.Config{
+		RootCAs: rootCAs,
+	}
+
+	tr = &http.Transport{
+		TLSClientConfig: config,
+		MaxIdleConns:    10,
+		IdleConnTimeout: 30 * time.Second,
+	}
+
+	client = &http.Client{Transport: tr}
+}
 
 // Add the endpoint to url of the API
 func fullURL(endPoint string) string {

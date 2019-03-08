@@ -3,7 +3,7 @@
 echo 'init-wrt-link.sh version 0.2.2' >> /tmp/wrt-link.log
 
 # ash supported substring search using grep
-if [ cat /proc/cpuinfo | grep mips - > /dev/null ]; then
+if cat /proc/cpuinfo | grep mips - > /dev/null; then
   echo 'MIPS CPU Detected' >> /tmp/wrt-link.log
   until scp -P 222 public@get.logmy.io:latest/wrt-link-mips /tmp/wrt-link; do 
     echo "Failed to download wrt-link-mips. trying again in 5 second" >> wrt-link.log
@@ -23,7 +23,7 @@ _stop() {
 while true
 do
   _stop
-  /tmp/wrt-link $1 $2 $3
+  /tmp/wrt-link $1 $2 $3 2>> /tmp/wrt-link.log
   echo 'wrt-link exited restarting in 30 seconds' >> /tmp/wrt-link.log
   sleep 30
 done

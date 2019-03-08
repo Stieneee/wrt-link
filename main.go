@@ -37,6 +37,8 @@ var lanInterface string
 func main() {
 	ravenInit()
 
+	setupHTTPClient()
+
 	signBytes, err := ioutil.ReadFile(os.Args[3])
 	if err != nil {
 		raven.CaptureErrorAndWait(err, ravenContext)
