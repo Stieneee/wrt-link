@@ -24,15 +24,17 @@ type routerInfoReport struct {
 }
 
 type dataReport struct {
-	T  uint64
-	Nf []Netfilter
-	Ct []Conntrack
+	T     uint64
+	Nf    []Netfilter
+	Ct    []Conntrack
+	WanIP string
 }
 
 var signKey *rsa.PrivateKey
 
 var sfe bool
 var lanInterface string
+var wanIP string
 
 func main() {
 	ravenInit()
@@ -150,11 +152,20 @@ func collectReport(conntrackResultChan <-chan []Conntrack, requestConntrackChan 
 
 	//	TODO Grad other stats
 
+	tmpByteArr, err := exec.Command("nvram", "get", "wan_ipaddr").Output()
+	if err != nil {
+		log.Fatal(err)
+		wanIP = "Error"
+	} else {
+		wanIP = strings.TrimSuffix(string(tmpByteArr), "\n")
+	}
+
 	// Create message
 	message := dataReport{
-		T:  uint64(time.Now().Unix()),
-		Nf: iptableResult,
-		Ct: conntrackResult,
+		T:     uint64(time.Now().Unix()),
+		Nf:    iptableResult,
+		Ct:    conntrackResult,
+		WanIP: wanIP,
 	}
 
 	bytes, err := json.Marshal(message)

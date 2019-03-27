@@ -13,10 +13,6 @@
 
 .samples/
 
-wrt-link-*
-
-main
-
+wrt-link*
 local-test.sh
-
 .vscode

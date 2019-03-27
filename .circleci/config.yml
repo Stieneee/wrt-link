@@ -1,0 +1,24 @@
+version: 2 
+jobs: 
+  build: 
+    docker:
+      - image: circleci/golang:latest #
+    working_directory: /go/src/github.com/Stieneee/wrt-link
+    environment: 
+      TEST_RESULTS: /tmp/test-results 
+    steps: 
+      - checkout 
+      - run:
+          name: Install upx
+          command: |
+            apt update
+            apt install upx
+            curl -L https://github.com/upx/upx/releases/download/v3.95/upx-3.95-amd64_linux.tar.xz -o /tmp/upx-3.95-amd64_linux.tar.xz
+            tar xf /tmp/upx-3.95-amd64_linux.tar.xz
+            mv tmp/upx-3.95-amd64_linux/upx $(which upx)
+
+      - run: go get github.com/mitchellh/gox
+
+      - run: make gox
+
+      # - run: 
