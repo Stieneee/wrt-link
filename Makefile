@@ -24,8 +24,8 @@ wrt-link_linux_amd64: $(GOFILES)
 
 gox:
 	gox -os="linux" -ldflags="$(LDFLAGS)"
-	upx --best --ultra-brute $(wildcard wrt-link_*) || true
-
+	-upx --best --ultra-brute wrt-link_linux_* 
+ 
 push:
 	scp init-wrt-link.sh ddwrt:/tmp/init-wrt-link.sh
 	scp wrt-link_linux_mips ddwrt:/tmp/wrt-link
