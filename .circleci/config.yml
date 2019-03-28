@@ -19,6 +19,8 @@ jobs:
 
       - run: go get github.com/mitchellh/gox
 
+      - run: go get
+
       - run: make gox
 
       # - run: 
