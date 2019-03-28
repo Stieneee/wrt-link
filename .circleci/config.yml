@@ -2,7 +2,7 @@ version: 2
 jobs: 
   build: 
     docker:
-      - image: circleci/golang:latest #
+      - image: golang:latest #
     working_directory: /go/src/github.com/Stieneee/wrt-link
     environment: 
       TEST_RESULTS: /tmp/test-results 
