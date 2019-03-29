@@ -18,6 +18,8 @@ jobs:
             tar xf /tmp/upx-3.95-amd64_linux.tar.xz
             mv upx-3.95-amd64_linux/upx $(which upx)
 
+      - run: go get github.com/mitchellh/gox
+      
       - run: go get
 
       - run: 
