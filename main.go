@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -14,6 +15,11 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/getsentry/raven-go"
+)
+
+var (
+	BuildVersion string
+	BuildTime    string
 )
 
 // os.Args[1] // API Address
@@ -37,6 +43,7 @@ var lanInterface string
 var wanIP string
 
 func main() {
+	fmt.Printf("wrt-link version:%v date:%v \n", BuildVersion, BuildTime)
 	ravenInit()
 
 	setupHTTPClient()

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-echo 'init-wrt-link.sh version 0.2.3' >> /tmp/wrt-link.log
+echo 'init-wrt-link.sh version VERSIONPLACEHOLDER' >> /tmp/wrt-link.log
 
 _stop() {
   test -f /tmp/stop-wrt-link && echo "Stopping!" && rm /tmp/stop-wrt-link && exit 0 || return 0

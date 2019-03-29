@@ -13,6 +13,7 @@
 
 .samples/
 
+build
 wrt-link*
 local-test.sh
 .vscode
