@@ -13,10 +13,10 @@ jobs:
           name: Install upx
           command: |
             apt update
-            apt install -y upx xz-utils
+            apt install -y upx xz-utils # install upx deps
             curl -L https://github.com/upx/upx/releases/download/v3.95/upx-3.95-amd64_linux.tar.xz -o /tmp/upx-3.95-amd64_linux.tar.xz
-            tar xf /tmp/upx-3.95-amd64_linux.tar.xz
-            mv upx-3.95-amd64_linux/upx $(which upx)
+            tar xf /tmp/upx-3.95-amd64_linux.tar.xz 
+            mv upx-3.95-amd64_linux/upx $(which upx) # overwrite upx with newer version
 
       - run: go get github.com/mitchellh/gox
       
@@ -39,8 +39,10 @@ jobs:
       - image: cibuilds/github:latest
     working_directory: /go/src/github.com/Stieneee/wrt-link
     steps:
+      - checkout 
       - attach_workspace:
           at: ./
+      - run: ls * -l
       - run:
           name: "Publish Release on GitHub"
           command: |
@@ -53,6 +55,8 @@ workflows:
     jobs:
       - build:
           filters:
+            branches:
+              ignore: /.*/
             tags:
               only: /(?<=^[Vv]|^)(?:(?<major>(?:0|[1-9](?:(?:0|[1-9])+)*))[.](?<minor>(?:0|[1-9](?:(?:0|[1-9])+)*))[.](?<patch>(?:0|[1-9](?:(?:0|[1-9])+)*))(?:-(?<prerelease>(?:(?:(?:[A-Za-z]|-)(?:(?:(?:0|[1-9])|(?:[A-Za-z]|-))+)?|(?:(?:(?:0|[1-9])|(?:[A-Za-z]|-))+)(?:[A-Za-z]|-)(?:(?:(?:0|[1-9])|(?:[A-Za-z]|-))+)?)|(?:0|[1-9](?:(?:0|[1-9])+)*))(?:[.](?:(?:(?:[A-Za-z]|-)(?:(?:(?:0|[1-9])|(?:[A-Za-z]|-))+)?|(?:(?:(?:0|[1-9])|(?:[A-Za-z]|-))+)(?:[A-Za-z]|-)(?:(?:(?:0|[1-9])|(?:[A-Za-z]|-))+)?)|(?:0|[1-9](?:(?:0|[1-9])+)*)))*))?(?:[+](?<build>(?:(?:(?:[A-Za-z]|-)(?:(?:(?:0|[1-9])|(?:[A-Za-z]|-))+)?|(?:(?:(?:0|[1-9])|(?:[A-Za-z]|-))+)(?:[A-Za-z]|-)(?:(?:(?:0|[1-9])|(?:[A-Za-z]|-))+)?)|(?:(?:0|[1-9])+))(?:[.](?:(?:(?:[A-Za-z]|-)(?:(?:(?:0|[1-9])|(?:[A-Za-z]|-))+)?|(?:(?:(?:0|[1-9])|(?:[A-Za-z]|-))+)(?:[A-Za-z]|-)(?:(?:(?:0|[1-9])|(?:[A-Za-z]|-))+)?)|(?:(?:0|[1-9])+)))*))?)$/
       - publish-github-release:

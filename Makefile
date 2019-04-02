@@ -1,3 +1,5 @@
+export GOMIPS=softfloat
+export GOMIPS64=softfloat
 
 DATE := $(shell date -u --iso-8601=minutes)
 VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
@@ -8,11 +10,11 @@ GOFILES=main.go ipconntrack.go iptable.go reporter.go raven.go jwt.go
 
 wrt-link_linux_mips: $(GOFILES)
 	echo "$(LDFLAGS)"
-	GOOS=linux GOARCH=mips GOMIPS=softfloat go build -o build/$@ --ldflags='$(LDFLAGS)' $(GOFILES)
+	GOOS=linux GOARCH=mips go build -o build/$@ --ldflags='$(LDFLAGS)' $(GOFILES)
 	upx --best --ultra-brute build/$@
 
 wrt-link_linux_mipsle: $(GOFILES)
-	GOOS=linux GOARCH=mipsle GOMIPS=softfloat go build -o build/$@ --ldflags='$(LDFLAGS)' $(GOFILES)
+	GOOS=linux GOARCH=mipsle go build -o build/$@ --ldflags='$(LDFLAGS)' $(GOFILES)
 	upx --best --ultra-brute build/$@
 
 wrt-link_linux_arm: $(GOFILES)
