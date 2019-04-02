@@ -31,7 +31,8 @@ gox:
 	gox -os="linux" -ldflags="$(LDFLAGS)" -output "build/wrt-link_{{.OS}}_{{.Arch}}"
 	-upx -q --best --ultra-brute build/wrt-link_linux_* 
 	cp init-wrt-link.sh build/
-	sed -i "s/VERSIONPLACEHOLDER/$VERSION/g" build/init-wrt-link.sh
+	sed -i "s/VERSIONPLACEHOLDER/$(VERSION)/g" build/init-wrt-link.sh 
+	# VERSION needs to be fixed
  
 push: 
 	scp init-wrt-link.sh ddwrt:/tmp/init-wrt-link.sh
