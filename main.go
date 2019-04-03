@@ -18,8 +18,10 @@ import (
 )
 
 var (
+	// BuildVersion - populated during go build
 	BuildVersion string
-	BuildTime    string
+	// BuildTime - populated during go build
+	BuildTime string
 )
 
 // os.Args[1] // API Address
@@ -43,7 +45,7 @@ var lanInterface string
 var wanIP string
 
 func main() {
-	fmt.Printf("wrt-link version:%v date:%v \n", BuildVersion, BuildTime)
+	fmt.Printf("wrt-link %v %v \n", BuildVersion, BuildTime)
 	ravenInit()
 
 	setupHTTPClient()
