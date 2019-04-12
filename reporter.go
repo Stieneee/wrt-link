@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"log"
 	"net/http"
@@ -14,7 +13,6 @@ import (
 	"time"
 
 	"github.com/certifi/gocertifi"
-	"github.com/getsentry/raven-go"
 )
 
 type msgContainer struct {
@@ -32,11 +30,6 @@ var client = &http.Client{Transport: tr}
 var sendChan = make(chan msgContainer, 10000)
 
 func setupHTTPClient() {
-	rootCAs, _ := x509.SystemCertPool()
-	if rootCAs == nil {
-		rootCAs = x509.NewCertPool()
-	}
-
 	rootCAs, err := gocertifi.CACerts()
 	if err != nil {
 		log.Println("failed to load root TLS certificates:", err)
@@ -67,7 +60,6 @@ func setupHTTPClient() {
 func fullURL(endPoint string) string {
 	u, err := url.Parse(os.Args[1])
 	if err != nil {
-		raven.CaptureError(err, ravenContext)
 		log.Println(err)
 		return ""
 	}
@@ -90,7 +82,6 @@ func sendReport(metheod string, auth bool, endPoint string, json []byte) {
 func attemptReport(msg msgContainer) bool {
 	req, err := http.NewRequest(msg.metheod, fullURL(msg.endPoint), bytes.NewBuffer(msg.json))
 	if err != nil {
-		raven.CaptureError(err, ravenContext)
 		log.Println(err)
 		return false
 	}
@@ -104,7 +95,6 @@ func attemptReport(msg msgContainer) bool {
 	if resp.StatusCode != 200 {
 		s := []string{"API returned status code", resp.Status, fullURL(msg.endPoint)}
 		err = errors.New(strings.Join(s, " "))
-		raven.CaptureError(err, ravenContext)
 		log.Println(err)
 		return false
 	}
@@ -138,7 +128,7 @@ func reporter() {
 			// TODO could decay retry time on success to ease load back in.
 		} else {
 			retryTime = 0
-			log.Println("msg sent")
+			// log.Println("msg sent")
 		}
 	}
 }

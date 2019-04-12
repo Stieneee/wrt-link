@@ -6,25 +6,25 @@ Orignally built to report to logmy.io the application reports perodically to an 
 ## Features
 
 - [x] Bandwidth Logging
-- [x]   iptables (wrtbwmon)
-- [x]   ipconntrack scrapping for bandwidth
-- [ ] Device connection reporting scrapping ip conntack
-- [ ]   Configurable private devices
-- [ ]   Black list checking
+  - [x] iptables (wrtbwmon)
+  - [x] ipconntrack scrapping for bandwidth
+- [x] Device connection reporting scrapping ip conntack
+  - [ ] Configurable private devices
+  - [ ] Black list checking
 - [ ] Router Stats
-- [ ]   Device type, CPU type
-- [ ]   DD-wrt version, kernel version
-- [ ]   CPU
-- [ ]   Memory
-- [ ]   Space, NVRAM, CIFS, JFFS2
-- [ ]   Active IP Connections
-- [ ]   Wireless Settings
-- [ ]   Wireless Clients
-- [ ]   Nearby Wireless Devices
+  - [ ] Device type, CPU type
+  - [ ] DD-wrt version, kernel version
+  - [ ] CPU
+  - [ ] Memory
+  - [ ] Space, NVRAM, CIFS, JFFS2
+  - [ ] Active IP Connections
+  - [ ] Wireless Settings
+  - [ ] Wireless Clients
+  - [ ] Nearby Wireless Devices
 - [ ] ISP Stats
-- [ ]   Ping
-- [ ]   Speedtest
-- [ ]   DNS response time
+  - [ ] Ping
+  - [ ] Speedtest
+  - [ ] DNS response time
 - [ ] Simple Endpoint Example - (Probably Nodejs and Mongodb in a Docker)
 
 ## Prerequisites
@@ -39,8 +39,7 @@ There is no need to read any of the inforamtion here.
 ## Compiling
 
 ```bash
-make get-toolchain
-make wrt-link-mips
+make all
 ```
 
 ## Installing
@@ -87,15 +86,6 @@ The binary is called with the following three arguemnts.
 
 ```bash
 /tmp/wrt-link {API_ENDPOINT} {ROUTER_ID} {KEY_FILE}
-```
-
-### Sentry Error Reporting
-
-Setting an environemnt variable will enable error reporting via Sentry.
-To track errors by wrt-link create a sentry account and generate a sentry url.
-
-```bash
-SENTRY={SENTRY_REPORTING_URI} /tmp/wrt-link {API_ENDPOINT} {ROUTER_ID} {KEY_FILE}
 ```
 
 ## Contributing

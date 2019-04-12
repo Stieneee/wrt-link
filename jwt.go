@@ -6,7 +6,6 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/getsentry/raven-go"
 )
 
 func createToken() string {
@@ -19,7 +18,6 @@ func createToken() string {
 
 	tokenString, err := t.SignedString(signKey)
 	if err != nil {
-		raven.CaptureError(err, ravenContext)
 		log.Println(err)
 		return ""
 	}

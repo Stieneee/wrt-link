@@ -25,13 +25,7 @@ downloadAndRun() {
 }
 
 # ash supported substring search using grep
-if cat /proc/cpuinfo | grep mips64le - > /dev/null; then
-  CPU_TYPE=mips64le
-  downloadAndRun $1 $2 $3
-elif cat /proc/cpuinfo | grep mips64 - > /dev/null; then
-  CPU_TYPE=mips64
-  downloadAndRun $1 $2 $3
-elif cat /proc/cpuinfo | grep mips - > /dev/null; then
+if cat /proc/cpuinfo | grep mips - > /dev/null; then
   CPU_TYPE=mips
   downloadAndRun $1 $2 $3
 elif cat /proc/cpuinfo | grep mipsle - > /dev/null; then
@@ -43,20 +37,8 @@ elif cat /proc/cpuinfo | grep arm64 - > /dev/null; then
 elif cat /proc/cpuinfo | grep arm - > /dev/null; then
   CPU_TYPE=arm
   downloadAndRun $1 $2 $3
-elif cat /proc/cpuinfo | grep ppc64le - > /dev/null; then
-  CPU_TYPE=ppc64le
-  downloadAndRun $1 $2 $3
-elif cat /proc/cpuinfo | grep ppc64 - > /dev/null; then
-  CPU_TYPE=ppc64
-  downloadAndRun $1 $2 $3
 elif cat /proc/cpuinfo | grep amd64 - > /dev/null; then
   CPU_TYPE=amd64
-  downloadAndRun $1 $2 $3
-elif cat /proc/cpuinfo | grep 386 - > /dev/null; then
-  CPU_TYPE=386
-  downloadAndRun $1 $2 $3
-elif cat /proc/cpuinfo | grep s390x - > /dev/null; then
-  CPU_TYPE=s390x
   downloadAndRun $1 $2 $3
 else
   echo 'ERROR: CPU type not detected!' >> /tmp/wrt-link.log

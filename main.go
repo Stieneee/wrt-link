@@ -14,7 +14,6 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/getsentry/raven-go"
 )
 
 var (
@@ -46,18 +45,15 @@ var wanIP string
 
 func main() {
 	fmt.Printf("wrt-link %v %v \n", BuildVersion, BuildTime)
-	ravenInit()
 
 	setupHTTPClient()
 
 	signBytes, err := ioutil.ReadFile(os.Args[3])
 	if err != nil {
-		raven.CaptureErrorAndWait(err, ravenContext)
 		log.Panicln(err)
 	}
 	signKey, err = jwt.ParseRSAPrivateKeyFromPEM(signBytes)
 	if err != nil {
-		raven.CaptureErrorAndWait(err, ravenContext)
 		log.Panicln(err)
 	}
 
@@ -84,14 +80,12 @@ func testAuthCreds() {
 	for i := 0; i < 20; i++ {
 		req, err := http.NewRequest("GET", fullURL("authCheck"), nil)
 		if err != nil {
-			// raven.CaptureError(err, ravenContext)
 			log.Println(err)
 		}
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Add("Authorization", "Bearer "+createToken())
 		resp, err := client.Do(req)
 		if err != nil {
-			// raven.CaptureError(err, ravenContext)
 			log.Println(err)
 			time.Sleep(30 * time.Second)
 			continue
@@ -99,7 +93,6 @@ func testAuthCreds() {
 		if resp.StatusCode != 200 {
 			s := []string{"API returned status code", resp.Status, fullURL("authCheck")}
 			err = errors.New(strings.Join(s, " "))
-			// raven.CaptureError(err, ravenContext)
 			log.Println(err)
 		}
 		if resp.StatusCode == 200 {
@@ -111,7 +104,6 @@ func testAuthCreds() {
 		time.Sleep(30 * time.Second)
 	}
 
-	raven.CaptureMessageAndWait("Failed AuthCheck", ravenContext)
 	log.Fatalln("Failed AuithCheck")
 }
 
@@ -138,7 +130,6 @@ func collectStartupInfo() {
 	}
 	bytes, err := json.Marshal(message)
 	if err != nil {
-		raven.CaptureError(err, ravenContext)
 		log.Println(err)
 		return
 	}
@@ -147,7 +138,7 @@ func collectStartupInfo() {
 }
 
 func collectReport(conntrackResultChan <-chan []Conntrack, requestConntrackChan chan<- bool) {
-	log.Println("generate report")
+	// log.Println("generate report")
 
 	// Call the Conntrack thread to report current totals via channel.
 	requestConntrackChan <- true
@@ -179,7 +170,6 @@ func collectReport(conntrackResultChan <-chan []Conntrack, requestConntrackChan 
 
 	bytes, err := json.Marshal(message)
 	if err != nil {
-		raven.CaptureError(err, ravenContext)
 		log.Println(err)
 		return
 	}

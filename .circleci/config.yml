@@ -17,14 +17,12 @@ jobs:
             curl -L https://github.com/upx/upx/releases/download/v3.95/upx-3.95-amd64_linux.tar.xz -o /tmp/upx-3.95-amd64_linux.tar.xz
             tar xf /tmp/upx-3.95-amd64_linux.tar.xz 
             mv upx-3.95-amd64_linux/upx $(which upx) # overwrite upx with newer version
-
-      - run: go get github.com/mitchellh/gox
       
       - run: go get
 
       - run: 
-          name: Build with gox
-          command: make gox
+          name: Build all
+          command: make all
     
       - store_artifacts:
           path: ./build
