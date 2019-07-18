@@ -35,6 +35,8 @@ type dataReport struct {
 	Nf    []Netfilter
 	Ct    []Conntrack
 	WanIP string
+	Ping  pingStats
+	// Speed speedStats
 }
 
 var signKey *rsa.PrivateKey
@@ -68,6 +70,7 @@ func main() {
 	requestConntrackChan := make(chan bool, 2)
 
 	go readConntrackScheduler(conntrackResultChan, requestConntrackChan)
+	go pingForInterval()
 	go reporter()
 
 	for range time.Tick(time.Minute) {
@@ -75,7 +78,7 @@ func main() {
 	}
 }
 
-// testAuthCreds - Test credientals before starting. ~10 mins to pass test before exit
+// testAuthCreds - Test creds before starting. ~10 mins to pass test before exit
 func testAuthCreds() {
 	for i := 0; i < 20; i++ {
 		req, err := http.NewRequest("GET", fullURL("authCheck"), nil)
@@ -104,7 +107,7 @@ func testAuthCreds() {
 		time.Sleep(30 * time.Second)
 	}
 
-	log.Fatalln("Failed AuithCheck")
+	log.Fatalln("Failed AuthCheck")
 }
 
 func collectStartupInfo() {
@@ -148,10 +151,6 @@ func collectReport(conntrackResultChan <-chan []Conntrack, requestConntrackChan 
 	var iptableResult = readIptable(conntrackResult)
 	setupIptable()
 
-	// Grab results from other go routines
-
-	//	TODO Grad other stats
-
 	tmpByteArr, err := exec.Command("nvram", "get", "wan_ipaddr").Output()
 	if err != nil {
 		log.Fatal(err)
@@ -166,6 +165,7 @@ func collectReport(conntrackResultChan <-chan []Conntrack, requestConntrackChan 
 		Nf:    iptableResult,
 		Ct:    conntrackResult,
 		WanIP: wanIP,
+		Ping:  getPingStats(),
 	}
 
 	bytes, err := json.Marshal(message)
@@ -175,4 +175,6 @@ func collectReport(conntrackResultChan <-chan []Conntrack, requestConntrackChan 
 	}
 
 	sendReport("POST", true, "report", bytes)
+
+	go pingForInterval()
 }

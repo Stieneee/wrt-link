@@ -6,7 +6,7 @@ VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
 
 LDFLAGS=-s -w -extldflags -static -X 'main.BuildTime=$(DATE)' -X 'main.BuildVersion=$(VERSION)'
 
-GOFILES=main.go ipconntrack.go iptable.go reporter.go jwt.go
+GOFILES=main.go ipconntrack.go iptable.go reporter.go jwt.go ping.go
 
 wrt-link_linux_mips: $(GOFILES)
 	echo "$(LDFLAGS)"
