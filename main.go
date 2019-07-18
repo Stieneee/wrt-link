@@ -36,7 +36,7 @@ type dataReport struct {
 	Ct    []Conntrack
 	WanIP string
 	Ping  pingStats
-	// Speed speedStats
+	Speed speedStats
 }
 
 var signKey *rsa.PrivateKey
@@ -68,13 +68,21 @@ func main() {
 
 	conntrackResultChan := make(chan []Conntrack, 2)
 	requestConntrackChan := make(chan bool, 2)
+	speedMonitorChan := make(chan speedStats, 2)
+	requestSpeedMonitorChan := make(chan bool, 2)
 
 	go readConntrackScheduler(conntrackResultChan, requestConntrackChan)
+	go speedMonitor(speedMonitorChan, requestSpeedMonitorChan)
 	go pingForInterval()
 	go reporter()
 
 	for range time.Tick(time.Minute) {
-		collectReport(conntrackResultChan, requestConntrackChan)
+		requestConntrackChan <- true
+		requestSpeedMonitorChan <- true
+		collectReport(
+			conntrackResultChan,
+			speedMonitorChan,
+		)
 	}
 }
 
@@ -140,15 +148,15 @@ func collectStartupInfo() {
 	sendReport("POST", true, "startup", bytes)
 }
 
-func collectReport(conntrackResultChan <-chan []Conntrack, requestConntrackChan chan<- bool) {
-	// log.Println("generate report")
-
-	// Call the Conntrack thread to report current totals via channel.
-	requestConntrackChan <- true
-	var conntrackResult = <-conntrackResultChan
+func collectReport(
+	conntrackResultChan <-chan []Conntrack,
+	speedMonitorChan <-chan speedStats,
+) {
+	conntrackResult := <-conntrackResultChan
+	speedStats := <-speedMonitorChan
 
 	// Iptables
-	var iptableResult = readIptable(conntrackResult)
+	iptableResult := readIptable(conntrackResult)
 	setupIptable()
 
 	tmpByteArr, err := exec.Command("nvram", "get", "wan_ipaddr").Output()
@@ -166,6 +174,7 @@ func collectReport(conntrackResultChan <-chan []Conntrack, requestConntrackChan 
 		Ct:    conntrackResult,
 		WanIP: wanIP,
 		Ping:  getPingStats(),
+		Speed: speedStats,
 	}
 
 	bytes, err := json.Marshal(message)
