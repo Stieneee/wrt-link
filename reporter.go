@@ -3,11 +3,13 @@ package main
 import (
 	"bytes"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path"
 	"strings"
 	"time"
@@ -99,10 +101,14 @@ func attemptReport(msg msgContainer) bool {
 		return false
 	}
 	defer resp.Body.Close()
-	// var result map[string]interface{}
+	var result map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&result)
+	log.Println(result)
 
-	// json.NewDecoder(resp.Body).Decode(&result)
-	// log.Println(result)
+	if result["restart"] == true {
+		log.Println("Restart Requested. Going down now....")
+		exec.Command("reboot").Run()
+	}
 	return true
 }
 
