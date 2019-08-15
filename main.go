@@ -119,6 +119,21 @@ func testAuthCreds() {
 }
 
 func collectStartupInfo() {
+
+	routerModel, err := exec.Command("nvram", "get", "DD_BOARD").Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	routerModel = []byte(strings.TrimSuffix(string(routerModel), "\n"))
+	log.Printf("Router Model is %s\n", routerModel)
+
+	osVersion, err := exec.Command("nvram", "get", "os_version").Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	osVersion = []byte(strings.TrimSuffix(string(osVersion), "\n"))
+	log.Printf("Firmware build %s\n", osVersion)
+
 	out, err := exec.Command("nvram", "get", "sfe").Output()
 	if err != nil {
 		log.Fatal(err)
