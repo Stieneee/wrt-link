@@ -31,12 +31,13 @@ type routerInfoReport struct {
 }
 
 type dataReport struct {
-	T     uint64
-	Nf    []Netfilter
-	Ct    []Conntrack
-	WanIP string
-	Ping  pingStats
-	Speed speedStats
+	T      uint64
+	Nf     []Netfilter
+	Ct     []Conntrack
+	WanIP  string
+	Ping   pingStats
+	Speed  speedStats
+	Uptime string
 }
 
 var signKey *rsa.PrivateKey
@@ -120,21 +121,21 @@ func testAuthCreds() {
 
 func collectStartupInfo() {
 
-	routerModel, err := exec.Command("nvram", "get", "DD_BOARD").Output()
+	out, err := exec.Command("nvram", "get", "DD_BOARD").Output()
 	if err != nil {
 		log.Fatal(err)
 	}
-	routerModel = []byte(strings.TrimSuffix(string(routerModel), "\n"))
+	routerModel := string(strings.TrimSuffix(string(out), "\n"))
 	log.Printf("Router Model is %s\n", routerModel)
 
-	osVersion, err := exec.Command("nvram", "get", "os_version").Output()
+	out, err = exec.Command("nvram", "get", "os_version").Output()
 	if err != nil {
 		log.Fatal(err)
 	}
-	osVersion = []byte(strings.TrimSuffix(string(osVersion), "\n"))
+	osVersion := string(strings.TrimSuffix(string(out), "\n"))
 	log.Printf("Firmware build %s\n", osVersion)
 
-	out, err := exec.Command("nvram", "get", "sfe").Output()
+	out, err = exec.Command("nvram", "get", "sfe").Output()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -143,16 +144,25 @@ func collectStartupInfo() {
 	}
 	log.Printf("SFE is %t\n", sfe)
 
-	lanInterface, err := exec.Command("nvram", "get", "lan_ifname").Output()
+	out, err = exec.Command("nvram", "get", "lan_ifname").Output()
 	if err != nil {
 		log.Fatal(err)
 	}
-	lanInterface = []byte(strings.TrimSuffix(string(lanInterface), "\n"))
+	lanInterface = string(strings.TrimSuffix(string(out), "\n"))
 	log.Printf("Lan Interface is %s\n", lanInterface)
 
+	out, err = exec.Command("uptime", "-s").Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	uptime := string(strings.TrimSuffix(string(out), "\n"))
+
 	message := map[string]interface{}{
+		"routerModel":  routerModel,
+		"osVersion":    osVersion,
 		"sfe":          sfe,
 		"lanInterface": lanInterface,
+		"uptime":       uptime,
 	}
 	bytes, err := json.Marshal(message)
 	if err != nil {
