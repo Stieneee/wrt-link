@@ -31,7 +31,7 @@ func setupIptable() {
 
 			err = exec.Command("/bin/sh", "-c", "iptables -L FORWARD -n | grep WRTLINK").Run()
 			if err == nil {
-				// the chain exsists but is in the wrong spot
+				// the chain exists but is in the wrong spot
 				log.Println("iptables chain misplaced, deleting it...")
 				// delete the chain
 				//TODO This only deletes one
@@ -53,13 +53,13 @@ func setupIptable() {
 				if line[0] == 'I' {
 					continue
 				}
-				feilds := strings.Split(line, " ")
-				if len(feilds) >= 1 {
-					_, err = exec.Command("sh", "-c", "'iptables -nL WRTLINK | grep \""+feilds[0]+"\"' | echo $?").Output()
+				fields := strings.Split(line, " ")
+				if len(fields) >= 1 {
+					_, err = exec.Command("sh", "-c", "'iptables -nL WRTLINK | grep \""+fields[0]+"\"' | echo $?").Output()
 					if err != nil {
-						log.Println("Adding Ip rules for " + feilds[0])
-						_ = exec.Command("iptables", "-I", "WRTLINK", "-d", feilds[0], "-j", "RETURN").Run()
-						_ = exec.Command("iptables", "-I", "WRTLINK", "-s", feilds[0], "-j", "RETURN").Run()
+						log.Println("Adding Ip rules for " + fields[0])
+						_ = exec.Command("iptables", "-I", "WRTLINK", "-d", fields[0], "-j", "RETURN").Run()
+						_ = exec.Command("iptables", "-I", "WRTLINK", "-s", fields[0], "-j", "RETURN").Run()
 					}
 				}
 			}
@@ -84,19 +84,19 @@ func readArp() map[string]Netfilter {
 			if line[0] == 'I' {
 				continue
 			}
-			feilds := strings.Fields(line)
-			if len(feilds) >= 6 {
-				dev, ok := arpData[feilds[0]]
+			fields := strings.Fields(line)
+			if len(fields) >= 6 {
+				dev, ok := arpData[fields[0]]
 				if !ok {
-					arpData[feilds[0]] = Netfilter{
-						IP:  feilds[0],
-						Mac: feilds[3],
+					arpData[fields[0]] = Netfilter{
+						IP:  fields[0],
+						Mac: fields[3],
 						Out: 0,
 						In:  0,
 					}
 				} else {
-					dev.IP = feilds[0]
-					dev.Mac = feilds[3]
+					dev.IP = fields[0]
+					dev.Mac = fields[3]
 					dev.Out = 0
 					dev.In = 0
 				}

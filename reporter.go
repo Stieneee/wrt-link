@@ -18,7 +18,7 @@ import (
 )
 
 type msgContainer struct {
-	metheod  string
+	method   string
 	auth     bool
 	endPoint string
 	json     []byte
@@ -71,9 +71,9 @@ func fullURL(endPoint string) string {
 }
 
 // Queue the report to be sent by reporter
-func sendReport(metheod string, auth bool, endPoint string, json []byte) {
+func sendReport(method string, auth bool, endPoint string, json []byte) {
 	msg := msgContainer{
-		metheod:  metheod,
+		method:   method,
 		auth:     auth,
 		endPoint: endPoint,
 		json:     json,
@@ -82,7 +82,7 @@ func sendReport(metheod string, auth bool, endPoint string, json []byte) {
 }
 
 func attemptReport(msg msgContainer) bool {
-	req, err := http.NewRequest(msg.metheod, fullURL(msg.endPoint), bytes.NewBuffer(msg.json))
+	req, err := http.NewRequest(msg.method, fullURL(msg.endPoint), bytes.NewBuffer(msg.json))
 	if err != nil {
 		log.Println(err)
 		return false
@@ -103,7 +103,7 @@ func attemptReport(msg msgContainer) bool {
 	defer resp.Body.Close()
 	var result map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&result)
-	log.Println(result)
+	// log.Println(result)
 
 	if result["restart"] == true {
 		log.Println("Restart Requested. Going down now....")

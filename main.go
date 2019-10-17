@@ -31,20 +31,24 @@ type routerInfoReport struct {
 }
 
 type dataReport struct {
-	T      uint64
-	Nf     []Netfilter
-	Ct     []Conntrack
-	WanIP  string
-	Ping   pingStats
-	Speed  speedStats
-	Uptime string
+	T         uint64
+	Nf        []Netfilter
+	Ct        []Conntrack
+	Hostnames []hostname
+	WanIP     string
+	Ping      pingStats
+	Speed     speedStats
+	Device    deviceStats
+	MemUsage  memUsageStats
 }
 
 var signKey *rsa.PrivateKey
 
 var sfe bool
 var lanInterface string
+var wanInterface string
 var wanIP string
+var uptime string
 
 func main() {
 	fmt.Printf("wrt-link %v %v \n", BuildVersion, BuildTime)
@@ -151,11 +155,19 @@ func collectStartupInfo() {
 	lanInterface = string(strings.TrimSuffix(string(out), "\n"))
 	log.Printf("Lan Interface is %s\n", lanInterface)
 
+	out, err = exec.Command("nvram", "get", "wan_ifname").Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	wanInterface = string(strings.TrimSuffix(string(out), "\n"))
+	log.Printf("Wan Interface is %s\n", wanInterface)
+
 	out, err = exec.Command("uptime", "-s").Output()
 	if err != nil {
 		log.Fatal(err)
 	}
-	uptime := string(strings.TrimSuffix(string(out), "\n"))
+	uptime = string(strings.TrimSuffix(string(out), "\n"))
+	log.Println(uptime)
 
 	message := map[string]interface{}{
 		"routerModel":  routerModel,
@@ -194,12 +206,15 @@ func collectReport(
 
 	// Create message
 	message := dataReport{
-		T:     uint64(time.Now().Unix()),
-		Nf:    iptableResult,
-		Ct:    conntrackResult,
-		WanIP: wanIP,
-		Ping:  getPingStats(),
-		Speed: speedStats,
+		T:         uint64(time.Now().Unix()),
+		Nf:        iptableResult,
+		Ct:        conntrackResult,
+		Hostnames: getHostnames(),
+		WanIP:     wanIP,
+		Ping:      getPingStats(),
+		Speed:     speedStats,
+		Device:    getDeviceStats(),
+		MemUsage:  getMemUsage(),
 	}
 
 	bytes, err := json.Marshal(message)

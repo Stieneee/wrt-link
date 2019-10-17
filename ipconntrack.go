@@ -11,15 +11,17 @@ import (
 
 // Conntrack - delivery structure of Conntrack based information
 type Conntrack struct {
-	Proto      string
-	Src        string
-	Dst        string
-	Srcp       uint32
-	Dstp       uint32
-	In         uint64
-	Out        uint64
-	InPackets  uint32
-	OutPackets uint32
+	Proto          string
+	Src            string
+	Dst            string
+	Srcp           uint32
+	Dstp           uint32
+	In             uint64
+	Out            uint64
+	InPackets      uint32
+	OutPackets     uint32
+	MaxActiveCount uint32
+	MinActiveCount uint32
 }
 
 type conntrackLog struct {
@@ -40,6 +42,8 @@ type conntrackLog struct {
 }
 
 var m = make(map[string]conntrackLog)
+var maxCount uint32 = 0
+var minCount uint32 = ^uint32(0)
 
 func readConntrackScheduler(conntrackResultChan chan<- []Conntrack, requestConntrackChan <-chan bool) {
 	for range time.Tick(time.Second) {
@@ -58,16 +62,22 @@ func reportConntract() []Conntrack {
 		if value.time < expireTime {
 			delete(m, key)
 		} else {
+			if minCount == ^uint32(0) {
+				minCount = 0
+			}
+
 			connTrackResult = append(connTrackResult, Conntrack{
-				Proto:      value.proto,
-				Src:        value.src,
-				Dst:        value.dst,
-				Srcp:       value.srcp,
-				Dstp:       value.dstp,
-				In:         value.inDelta,
-				Out:        value.outDelta,
-				InPackets:  value.inPacketsDelta,
-				OutPackets: value.outPacketsDelta,
+				Proto:          value.proto,
+				Src:            value.src,
+				Dst:            value.dst,
+				Srcp:           value.srcp,
+				Dstp:           value.dstp,
+				In:             value.inDelta,
+				Out:            value.outDelta,
+				InPackets:      value.inPacketsDelta,
+				OutPackets:     value.outPacketsDelta,
+				MaxActiveCount: maxCount,
+				MinActiveCount: minCount,
 			})
 
 			value.inDelta = 0
@@ -78,6 +88,9 @@ func reportConntract() []Conntrack {
 			m[key] = value
 		}
 	}
+
+	maxCount = 0
+	minCount = ^uint32(0)
 
 	return connTrackResult
 }
@@ -90,9 +103,12 @@ func readConntrack(filename string) {
 	}
 	defer file.Close()
 
+	var activeCount uint32 = 0
+
 	scanner := bufio.NewScanner(file)
 
 	for scanner.Scan() {
+		activeCount++
 		text := scanner.Text()
 		cType := text[0:3]
 
@@ -242,5 +258,12 @@ func readConntrack(filename string) {
 	}
 	// elapsed := time.Since(start)
 	// log.Printf("Run took %s", elapsed)
-	// PrintMemUsage()
+
+	if activeCount > maxCount {
+		maxCount = activeCount
+	}
+
+	if activeCount < minCount {
+		minCount = activeCount
+	}
 }

@@ -12,12 +12,13 @@ Originally built to report to logmy.io the application reports periodically to a
   - [ ] Configurable private devices
   - [ ] Black list checking
 - [ ] Router Stats
-  - [ ] Device type, CPU type
-  - [ ] DD-wrt version, kernel version
-  - [ ] CPU
-  - [ ] Memory
+  - [x] Device type, CPU type
+  - [x] DD-wrt version, kernel version
+  - [x] CPU
+  - [x] Memory
   - [ ] Space, NVRAM, CIFS, JFFS2
-  - [ ] Active IP Connections
+  - [x] Active IP Connections
+  - [x] Device Hostnames
   - [ ] Wireless Settings
   - [ ] Wireless Clients
   - [ ] Nearby Wireless Devices

@@ -17,10 +17,17 @@ type speedStats struct {
 
 func speedMonitor(speedMonitorChan chan<- speedStats, requestSpeedMonitorChan <-chan bool) {
 	var maxRxR, maxTxR uint64 = 0, 0
-	prevRx, prevTx := getByteValues()
+
+	if len(wanInterface) == 0 {
+		log.Println("Speed Monitor DISABLED")
+	}
+
+	log.Printf("Speed Monitor watching %s\n", wanInterface)
+
+	prevRx, prevTx := getInterfaceByteValues(wanInterface)
 
 	for range time.Tick(time.Second) {
-		rx, tx := getByteValues()
+		rx, tx := getInterfaceByteValues(wanInterface)
 		rxr := rx - prevRx
 		txr := tx - prevTx
 		if rxr > maxRxR {
@@ -47,7 +54,7 @@ func speedMonitor(speedMonitorChan chan<- speedStats, requestSpeedMonitorChan <-
 	}
 }
 
-func getByteValues() (uint64, uint64) {
+func getInterfaceByteValues(in string) (uint64, uint64) {
 	file, err := os.Open("/proc/net/dev")
 	if err != nil {
 		log.Fatal(err)
@@ -58,7 +65,7 @@ func getByteValues() (uint64, uint64) {
 	for scanner.Scan() {
 		text := scanner.Text()
 		items := strings.Fields(text)
-		if items[0] == "vlan2:" {
+		if strings.HasPrefix(items[0], in) {
 			rx, _ := strconv.ParseUint(items[1], 10, 64)
 			tx, _ := strconv.ParseUint(items[9], 10, 64)
 			return rx, tx
