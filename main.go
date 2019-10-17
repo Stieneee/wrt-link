@@ -40,9 +40,12 @@ type dataReport struct {
 	Speed     speedStats
 	Device    deviceStats
 	MemUsage  memUsageStats
+	AppUptime uint64
 }
 
 var signKey *rsa.PrivateKey
+
+var startTime time.Time
 
 var sfe bool
 var lanInterface string
@@ -51,17 +54,18 @@ var wanIP string
 var uptime string
 
 func main() {
+	startTime = time.Now()
 	fmt.Printf("wrt-link %v %v \n", BuildVersion, BuildTime)
 
 	setupHTTPClient()
 
 	signBytes, err := ioutil.ReadFile(os.Args[3])
 	if err != nil {
-		log.Panicln(err)
+		log.Fatal(err)
 	}
 	signKey, err = jwt.ParseRSAPrivateKeyFromPEM(signBytes)
 	if err != nil {
-		log.Panicln(err)
+		log.Fatal(err)
 	}
 
 	testAuthCreds()
@@ -120,7 +124,7 @@ func testAuthCreds() {
 		time.Sleep(30 * time.Second)
 	}
 
-	log.Fatalln("Failed AuthCheck")
+	log.Fatal("Failed AuthCheck")
 }
 
 func collectStartupInfo() {
@@ -167,7 +171,6 @@ func collectStartupInfo() {
 		log.Fatal(err)
 	}
 	uptime = string(strings.TrimSuffix(string(out), "\n"))
-	log.Println(uptime)
 
 	message := map[string]interface{}{
 		"routerModel":  routerModel,
@@ -215,6 +218,7 @@ func collectReport(
 		Speed:     speedStats,
 		Device:    getDeviceStats(),
 		MemUsage:  getMemUsage(),
+		AppUptime: uint64(time.Since(startTime).Seconds()),
 	}
 
 	bytes, err := json.Marshal(message)
