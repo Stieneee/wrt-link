@@ -84,6 +84,7 @@ func main() {
 	go speedMonitor(speedMonitorChan, requestSpeedMonitorChan)
 	go pingForInterval()
 	go reporter()
+	go upgradeChecker()
 
 	for range time.Tick(time.Minute) {
 		requestConntrackChan <- true
