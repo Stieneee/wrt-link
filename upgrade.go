@@ -102,6 +102,7 @@ func doUpgrade(url string, hash string, attemptID string) {
 // Do not queue these messages. Attempt to send immediately and block progress
 
 func upgradeReport(level string, msg string, attemptID string) {
+	log.Println(msg)
 	message := map[string]interface{}{
 		"level":     level,
 		"attemptID": attemptID,
